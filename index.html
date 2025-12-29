@@ -29,6 +29,7 @@
         .section-title { background: #eee; padding: 12px; margin-top: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; }
         .hidden-content { display: none; padding: 10px; background: #fff; border: 1px solid #eee; border-radius: 0 0 8px 8px; max-height: 250px; overflow-y: auto; }
         .log-item { padding: 8px; border-bottom: 1px solid #eee; font-size: 13px; display: flex; flex-direction: column; }
+        .btn-setup { background: #8e44ad; font-size: 12px; margin-top: 20px; opacity: 0.8; }
     </style>
 </head>
 <body>
@@ -36,12 +37,12 @@
 <div class="container">
     <div class="total-card">
         <span>সংগঠনের মোট ফান্ড</span>
-        <h1>৳ <span id="orgTotalDisplay">১৫০০০</span></h1>
+        <h1>৳ <span id="orgTotalDisplay">...</span></h1>
     </div>
 
     <div class="box">
-        <h3>🔍 সদস্য প্রোফাইল অনুসন্ধান</h3>
-        <input type="number" id="searchId" placeholder="সদস্য আইডি (যেমন: ১০১ - ১১০)">
+        <h3>🔍 প্রোফাইল অনুসন্ধান</h3>
+        <input type="number" id="searchId" placeholder="সদস্য আইডি (যেমন: ১০১)">
         <button class="btn-search" onclick="searchUser()">প্রোফাইল দেখুন</button>
         
         <div id="profileResult">
@@ -51,17 +52,17 @@
                 <span id="pRole" style="background: #e8f5e9; padding: 2px 10px; border-radius: 10px; font-size: 12px; color: var(--primary);"></span>
             </div>
             
-            <div class="info-row" style="background: #f9f9f9;"><b>ঠিকানা:</b> <span id="pAddress"></span></div>
+            <div class="info-row"><b>ঠিকানা:</b> <span id="pAddress"></span></div>
             <div class="info-row"><b>পিতার নাম:</b> <span id="pFather"></span></div>
             <div class="info-row"><b>মাতার নাম:</b> <span id="pMother"></span></div>
             <div class="info-row"><b>ফোন নম্বর:</b> <span id="pPhone"></span></div>
             <div class="info-row"><b>রক্তের গ্রুপ:</b> <span id="pBlood" style="color:red; font-weight:bold;"></span></div>
             <div class="info-row"><b>এনআইডি:</b> <span id="pNID"></span></div>
-            <div class="info-row"><b>ফেসবুক আইডি:</b> <a id="pFB" href="#" target="_blank" style="text-decoration:none; color:var(--blue);">লিঙ্ক দেখুন</a></div>
+            <div class="info-row"><b>ফেসবুক:</b> <a id="pFB" href="#" target="_blank" style="text-decoration:none; color:var(--blue);">ভিজিট করুন</a></div>
             
             <div class="info-row" style="border:none; margin-top:10px; font-size:16px; background: #f0fdf4; padding: 10px; border-radius: 8px;">
                 <b>ব্যক্তিগত তহবিল:</b> 
-                <span style="color:var(--primary); font-weight:bold;">৳ <span id="pBalance"></span></span>
+                <span style="color:var(--primary); font-weight:bold;">৳ <span id="pBalance">0</span></span>
             </div>
         </div>
     </div>
@@ -75,57 +76,103 @@
     </div>
 
     <div class="box" style="border-left: 5px solid var(--danger);">
-        <h3>💸 সংগঠনের খরচ (Admin Only)</h3>
+        <h3>💸 সংগঠনের খরচ (Admin only)</h3>
         <input type="number" id="expAmount" placeholder="পরিমাণ">
-        <input type="text" id="expReason" placeholder="খরচের কারণ">
+        <input type="text" id="expReason" placeholder="কারণ">
         <input type="password" id="adminPin" placeholder="এডমিন সিকিউরিটি পিন">
         <button class="btn-exp" onclick="withdrawMoney()">খরচ নিশ্চিত করুন</button>
     </div>
 
     <div class="section-title" onclick="toggleSec('statement')">📊 লেনদেনের ইতিহাস</div>
     <div id="statement" class="hidden-content">
-        <div id="logList">
-            <div class="log-item">সিস্টেম চালু হয়েছে - প্রাথমিক ফান্ড জমা - ৳১৫০০০</div>
-        </div>
+        <div id="logList">লোডিং...</div>
     </div>
+
+    <button class="btn-setup" onclick="setupDatabase()">প্রথমবার ডাটাবেস সেটআপ করুন</button>
 </div>
 
 <script>
-    // আপনার ফায়ারবেস কনফিগারেশন
     const firebaseConfig = {
         databaseURL: "https://coffee-spark-ai-barista-46e11-default-rtdb.firebaseio.com/",
     };
-
-    // ফায়ারবেস ইনিশিয়ালাইজ
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
-    // আপনার ১০ জন সদস্যের মূল তথ্য
-    let members = {
-        "101": { name: "আব্দুর রহমান", role: "সভাপতি", address: "শান্তিনগর, ঢাকা", father: "মোঃ খলিলুর রহমান", mother: "রাবেয়া খাতুন", phone: "01711111111", blood: "A+", nid: "123456789", fb: "#", balance: 2000, img: "https://via.placeholder.com/90" },
-        "102": { name: "সাকিব হাসান", role: "সাধারণ সম্পাদক", address: "উত্তরা, ঢাকা", father: "মোঃ নজরুল ইসলাম", mother: "আয়েশা সিদ্দিকা", phone: "01722222222", blood: "B+", nid: "234567890", fb: "#", balance: 1500, img: "https://via.placeholder.com/90" },
-        "103": { name: "তামিম ইকবাল", role: "কোষাধ্যক্ষ", address: "বনানী, ঢাকা", father: "মোঃ জহিরুল হক", mother: "ফাতেমা বেগম", phone: "01733333333", blood: "O+", nid: "345678901", fb: "#", balance: 3000, img: "https://via.placeholder.com/90" },
-        "104": { name: "মুশফিকুর রহিম", role: "সদস্য", address: "মিরপুর, ঢাকা", father: "মোঃ মাহাবুব আলম", mother: "খাদিজা বেগম", phone: "01744444444", blood: "AB+", nid: "456789012", fb: "#", balance: 1000, img: "https://via.placeholder.com/90" },
-        "105": { name: "মাহমুদুল্লাহ রিয়াদ", role: "সদস্য", address: "সাভার, ঢাকা", father: "মোঃ লিয়াকত আলী", mother: "হাসনা বেগম", phone: "01755555555", blood: "A-", nid: "567890123", fb: "#", balance: 1200, img: "https://via.placeholder.com/90" },
-        "106": { name: "মোস্তাফিজুর রহমান", role: "সদস্য", address: "সাতক্ষীরা", father: "মোঃ আবুল কাসেম", mother: "মরিয়ম বেগম", phone: "01766666666", blood: "O-", nid: "678901234", fb: "#", balance: 800, img: "https://via.placeholder.com/90" },
-        "107": { name: "লিটন দাস", role: "সদস্য", address: "দিনাজপুর", father: "বিকাশ দাস", mother: "মিতু দাস", phone: "01777777777", blood: "B-", nid: "789012345", fb: "#", balance: 2500, img: "https://via.placeholder.com/90" },
-        "108": { name: "তাসকিন আহমেদ", role: "সদস্য", address: "মোহাম্মদপুর, ঢাকা", father: "মোঃ আব্দুর রশিদ", mother: "নাহার বেগম", phone: "01788888888", blood: "A+", nid: "890123456", fb: "#", balance: 1100, img: "https://via.placeholder.com/90" },
-        "109": { name: "মেহেদী হাসান মিরাজ", role: "সদস্য", address: "খুলনা", father: "মোঃ জালাল আহমেদ", mother: "রেহানা পারভীন", phone: "01799999999", blood: "O+", nid: "901234567", fb: "#", balance: 1400, img: "https://via.placeholder.com/90" },
-        "110": { name: "শরিফুল ইসলাম", role: "সদস্য", address: "পঞ্চগড়", father: "মোঃ হাসিবুর রহমান", mother: "সাজেদা বেগম", phone: "01811111111", blood: "AB-", nid: "012345678", fb: "#", balance: 500, img: "https://via.placeholder.com/90" }
-    };
-    
-    let totalFund = 15000;
+    let members = {};
+    let totalFund = 0;
     const SECURITY = { depo: "5555", admin: "1234" };
 
-    // ডাটাবেস থেকে রিয়েল টাইম ডেটা শোনা
-    database.ref('orgStatus').on('value', (snapshot) => {
+    // ১. ডাটাবেস থেকে অটো আপডেট রিড করা
+    database.ref('/').on('value', (snapshot) => {
         const data = snapshot.val();
         if (data) {
-            totalFund = data.totalFund;
+            totalFund = data.totalFund || 0;
             document.getElementById("orgTotalDisplay").innerText = totalFund;
+            members = data.members || {};
+            
+            // লগ বা ইতিহাস আপডেট
+            let logList = document.getElementById("logList");
+            logList.innerHTML = "";
+            if(data.logs) {
+                Object.values(data.logs).reverse().forEach(log => {
+                    logList.innerHTML += `<div class="log-item"><b>${log.msg}</b><small style="color:#888;">${log.time}</small></div>`;
+                });
+            } else {
+                logList.innerHTML = "লেনদেনের কোনো তথ্য নেই।";
+            }
         }
     });
 
+    // ২. টাকা জমা (প্রোফাইল + ফান্ড + ইতিহাস ৩টিই সেভ হবে)
+    function addMoney() {
+        let id = document.getElementById("depoId").value;
+        let amount = parseInt(document.getElementById("depoAmount").value);
+        let pin = document.getElementById("depoPin").value;
+
+        if (pin !== SECURITY.depo) return alert("ভুল পিন!");
+
+        if(members[id] && amount > 0) {
+            let newMemberBal = (parseInt(members[id].balance) || 0) + amount;
+            let newTotalFund = totalFund + amount;
+
+            // ডাটাবেসে সেভ শুরু
+            database.ref('members/' + id).update({ balance: newMemberBal }); // প্রোফাইল আপডেট
+            database.ref('totalFund').set(newTotalFund); // মোট ফান্ড আপডেট
+            database.ref('logs').push({ // ইতিহাস আপডেট
+                msg: `[+] জমা: ৳${amount} (ID: ${id}, নাম: ${members[id].name})`,
+                time: new Date().toLocaleString('bn-BD')
+            });
+
+            alert("ব্যক্তিগত ব্যালেন্স এবং মোট ফান্ড সফলভাবে সেভ হয়েছে!");
+            document.getElementById("depoAmount").value = "";
+            document.getElementById("depoPin").value = "";
+        } else {
+            alert("আইডি পাওয়া যায়নি!");
+        }
+    }
+
+    // ৩. খরচ আপডেট
+    function withdrawMoney() {
+        let amount = parseInt(document.getElementById("expAmount").value);
+        let reason = document.getElementById("expReason").value;
+        let pin = document.getElementById("adminPin").value;
+
+        if (pin !== SECURITY.admin) return alert("ভুল পিন!");
+
+        if (amount > 0 && amount <= totalFund) {
+            let newTotalFund = totalFund - amount;
+            database.ref('totalFund').set(newTotalFund);
+            database.ref('logs').push({
+                msg: `[-] খরচ: ৳${amount} (${reason})`,
+                time: new Date().toLocaleString('bn-BD')
+            });
+            alert("খরচ সেভ হয়েছে!");
+        } else {
+            alert("তহবিলে পর্যাপ্ত টাকা নেই!");
+        }
+    }
+
+    // ৪. প্রোফাইল অনুসন্ধান (সব তথ্যসহ)
     function searchUser() {
         let id = document.getElementById("searchId").value;
         let res = document.getElementById("profileResult");
@@ -141,66 +188,30 @@
             document.getElementById("pNID").innerText = m.nid;
             document.getElementById("pFB").href = m.fb;
             document.getElementById("pBalance").innerText = m.balance;
-            document.getElementById("pImg").src = m.img;
+            document.getElementById("pImg").src = m.img || "https://via.placeholder.com/90";
             res.style.display = "block";
         } else {
-            alert("সঠিক সদস্য আইডি দিন!");
-            res.style.display = "none";
+            alert("আইডি ভুল!");
         }
     }
 
-    function addMoney() {
-        let id = document.getElementById("depoId").value;
-        let amount = parseInt(document.getElementById("depoAmount").value);
-        let pin = document.getElementById("depoPin").value;
-
-        if (pin !== SECURITY.depo) return alert("ভুল সিকিউরিটি পিন!");
-
-        if(members[id] && amount > 0) {
-            members[id].balance += amount;
-            totalFund += amount;
-            
-            // ফায়ারবেসে আপডেট করা
-            database.ref('orgStatus').set({ totalFund: totalFund });
-            database.ref('logs').push({
-                msg: `[+] জমা: ৳${amount} (ID: ${id})`,
-                time: new Date().toLocaleString('bn-BD')
-            });
-
-            updateUI(`[+] জমা: ৳${amount} (ID: ${id})`);
-            alert("সফলভাবে জমা হয়েছে!");
-            document.getElementById("depoAmount").value = "";
-            document.getElementById("depoPin").value = "";
-        }
-    }
-
-    function withdrawMoney() {
-        let amount = parseInt(document.getElementById("expAmount").value);
-        let reason = document.getElementById("expReason").value;
-        let pin = document.getElementById("adminPin").value;
-
-        if (pin !== SECURITY.admin) return alert("ভুল এডমিন পিন!");
-
-        if (amount > 0 && amount <= totalFund) {
-            totalFund -= amount;
-            
-            // ফায়ারবেসে আপডেট করা
-            database.ref('orgStatus').set({ totalFund: totalFund });
-            database.ref('logs').push({
-                msg: `[-] খরচ: ৳${amount} (${reason})`,
-                time: new Date().toLocaleString('bn-BD')
-            });
-
-            updateUI(`[-] খরচ: ৳${amount} (${reason})`);
-            alert("খরচ সফল হয়েছে!");
-        }
-    }
-
-    function updateUI(msg) {
-        document.getElementById("orgTotalDisplay").innerText = totalFund;
-        let logList = document.getElementById("logList");
-        let now = new Date().toLocaleString('bn-BD');
-        logList.innerHTML = `<div class="log-item"><b>${msg}</b><span style="font-size:10px; color:#999;">${now}</span></div>` + logList.innerHTML;
+    // ৫. সেটআপ ডাটাবেস (তথ্যগুলো ডাটাবেসে পাঠানোর জন্য)
+    function setupDatabase() {
+        const initialMembers = {
+            "101": { name: "আব্দুর রহমান", role: "সভাপতি", address: "ঢাকা", father: "মোঃ খলিলুর রহমান", mother: "রাবেয়া খাতুন", phone: "01711111111", blood: "A+", nid: "123456789", fb: "#", balance: 2000, img: "https://via.placeholder.com/90" },
+            "102": { name: "সাকিব হাসান", role: "সম্পাদক", address: "ঢাকা", father: "নজরুল ইসলাম", mother: "আয়েশা", phone: "01722222222", blood: "B+", nid: "234567890", fb: "#", balance: 1500, img: "https://via.placeholder.com/90" },
+            "103": { name: "তামিম ইকবাল", role: "কোষাধ্যক্ষ", address: "ঢাকা", father: "জহিরুল হক", mother: "ফাতেমা", phone: "01733333333", blood: "O+", nid: "345678901", fb: "#", balance: 3000, img: "https://via.placeholder.com/90" },
+            "104": { name: "মুশফিক রহিম", role: "সদস্য", address: "ঢাকা", father: "মাহাবুব আলম", mother: "খাদিজা", phone: "01744444444", blood: "AB+", nid: "456789012", fb: "#", balance: 1000, img: "https://via.placeholder.com/90" },
+            "105": { name: "মাহমুদুল্লাহ", role: "সদস্য", address: "সাভার", father: "লিয়াকত আলী", mother: "হাসনা", phone: "01755555555", blood: "A-", nid: "567890123", fb: "#", balance: 1200, img: "https://via.placeholder.com/90" },
+            "106": { name: "মোস্তাফিজ", role: "সদস্য", address: "সাতক্ষীরা", father: "আবুল কাসেম", mother: "মরিয়ম", phone: "01766666666", blood: "O-", nid: "678901234", fb: "#", balance: 800, img: "https://via.placeholder.com/90" },
+            "107": { name: "লিটন দাস", role: "সদস্য", address: "দিনাজপুর", father: "বিকাশ দাস", mother: "মিতু দাস", phone: "01777777777", blood: "B-", nid: "789012345", fb: "#", balance: 2500, img: "https://via.placeholder.com/90" },
+            "108": { name: "তাসকিন", role: "সদস্য", address: "মোহাম্মদপুর", father: "আব্দুর রশিদ", mother: "নাহার", phone: "01788888888", blood: "A+", nid: "890123456", fb: "#", balance: 1100, img: "https://via.placeholder.com/90" },
+            "109": { name: "মেহেদী মিরাজ", role: "সদস্য", address: "খুলনা", father: "জালাল আহমেদ", mother: "পারভীন", phone: "01799999999", blood: "O+", nid: "901234567", fb: "#", balance: 1400, img: "https://via.placeholder.com/90" },
+            "110": { name: "শরিফুল", role: "সদস্য", address: "পঞ্চগড়", father: "হাসিবুর রহমান", mother: "সাজেদা", phone: "01811111111", blood: "AB-", nid: "012345678", fb: "#", balance: 500, img: "https://via.placeholder.com/90" }
+        };
+        database.ref('members').set(initialMembers);
+        database.ref('totalFund').set(15000);
+        alert("সফলভাবে সব তথ্য সেটআপ হয়েছে!");
     }
 
     function toggleSec(id) {
