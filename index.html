@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>সংগঠন ম্যানেজমেন্ট সিস্টেম প্রো</title>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+
+    <style>
+        :root { --primary: #27ae60; --danger: #e74c3c; --blue: #2196f3; --dark: #2c3e50; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 10px; }
+        .container { max-width: 480px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .total-card { background: linear-gradient(135deg, var(--dark), #456789); color: white; padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 20px; }
+        .total-card h1 { font-size: 32px; margin: 10px 0; color: #f1c40f; }
+        .box { background: #fff; padding: 15px; border-radius: 10px; border: 1px solid #ddd; margin-bottom: 15px; }
+        h3 { margin-top: 0; font-size: 18px; border-bottom: 2px solid #f4f4f4; padding-bottom: 8px; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; transition: 0.3s; }
+        .btn-search { background: var(--primary); }
+        .btn-depo { background: var(--blue); }
+        .btn-exp { background: var(--danger); }
+        #profileResult { display: none; padding: 15px; background: #fff; border-radius: 10px; border: 2px solid var(--primary); margin-top: 10px; text-align: left; }
+        .profile-header { text-align: center; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .profile-img { width: 90px; height: 90px; border-radius: 50%; border: 3px solid var(--primary); object-fit: cover; }
+        .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #eee; font-size: 14px; }
+        .info-row b { color: #555; min-width: 100px; }
+        .info-row span { text-align: right; color: #333; }
+        .section-title { background: #eee; padding: 12px; margin-top: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .hidden-content { display: none; padding: 10px; background: #fff; border: 1px solid #eee; border-radius: 0 0 8px 8px; max-height: 250px; overflow-y: auto; }
+        .log-item { padding: 8px; border-bottom: 1px solid #eee; font-size: 13px; display: flex; flex-direction: column; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="total-card">
+        <span>সংগঠনের মোট ফান্ড</span>
+        <h1>৳ <span id="orgTotalDisplay">১৫০০০</span></h1>
+    </div>
+
+    <div class="box">
+        <h3>🔍 সদস্য প্রোফাইল অনুসন্ধান</h3>
+        <input type="number" id="searchId" placeholder="সদস্য আইডি (যেমন: ১০১ - ১১০)">
+        <button class="btn-search" onclick="searchUser()">প্রোফাইল দেখুন</button>
+        
+        <div id="profileResult">
+            <div class="profile-header">
+                <img id="pImg" src="" class="profile-img">
+                <h3 id="pName" style="margin:5px 0; color: var(--primary);"></h3>
+                <span id="pRole" style="background: #e8f5e9; padding: 2px 10px; border-radius: 10px; font-size: 12px; color: var(--primary);"></span>
+            </div>
+            
+            <div class="info-row" style="background: #f9f9f9;"><b>ঠিকানা:</b> <span id="pAddress"></span></div>
+            <div class="info-row"><b>পিতার নাম:</b> <span id="pFather"></span></div>
+            <div class="info-row"><b>মাতার নাম:</b> <span id="pMother"></span></div>
+            <div class="info-row"><b>ফোন নম্বর:</b> <span id="pPhone"></span></div>
+            <div class="info-row"><b>রক্তের গ্রুপ:</b> <span id="pBlood" style="color:red; font-weight:bold;"></span></div>
+            <div class="info-row"><b>এনআইডি:</b> <span id="pNID"></span></div>
+            <div class="info-row"><b>ফেসবুক আইডি:</b> <a id="pFB" href="#" target="_blank" style="text-decoration:none; color:var(--blue);">লিঙ্ক দেখুন</a></div>
+            
+            <div class="info-row" style="border:none; margin-top:10px; font-size:16px; background: #f0fdf4; padding: 10px; border-radius: 8px;">
+                <b>ব্যক্তিগত তহবিল:</b> 
+                <span style="color:var(--primary); font-weight:bold;">৳ <span id="pBalance"></span></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="box" style="border-left: 5px solid var(--blue);">
+        <h3>💰 টাকা জমা দিন</h3>
+        <input type="number" id="depoId" placeholder="সদস্য আইডি">
+        <input type="number" id="depoAmount" placeholder="টাকার পরিমাণ">
+        <input type="password" id="depoPin" placeholder="জমা সিকিউরিটি পিন">
+        <button class="btn-depo" onclick="addMoney()">জমা নিশ্চিত করুন</button>
+    </div>
+
+    <div class="box" style="border-left: 5px solid var(--danger);">
+        <h3>💸 সংগঠনের খরচ (Admin Only)</h3>
+        <input type="number" id="expAmount" placeholder="পরিমাণ">
+        <input type="text" id="expReason" placeholder="খরচের কারণ">
+        <input type="password" id="adminPin" placeholder="এডমিন সিকিউরিটি পিন">
+        <button class="btn-exp" onclick="withdrawMoney()">খরচ নিশ্চিত করুন</button>
+    </div>
+
+    <div class="section-title" onclick="toggleSec('statement')">📊 লেনদেনের ইতিহাস</div>
+    <div id="statement" class="hidden-content">
+        <div id="logList">
+            <div class="log-item">সিস্টেম চালু হয়েছে - প্রাথমিক ফান্ড জমা - ৳১৫০০০</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // আপনার ফায়ারবেস কনফিগারেশন
+    const firebaseConfig = {
+        databaseURL: "https://coffee-spark-ai-barista-46e11-default-rtdb.firebaseio.com/",
+    };
+
+    // ফায়ারবেস ইনিশিয়ালাইজ
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    // আপনার ১০ জন সদস্যের মূল তথ্য
+    let members = {
+        "101": { name: "আব্দুর রহমান", role: "সভাপতি", address: "শান্তিনগর, ঢাকা", father: "মোঃ খলিলুর রহমান", mother: "রাবেয়া খাতুন", phone: "01711111111", blood: "A+", nid: "123456789", fb: "#", balance: 2000, img: "https://via.placeholder.com/90" },
+        "102": { name: "সাকিব হাসান", role: "সাধারণ সম্পাদক", address: "উত্তরা, ঢাকা", father: "মোঃ নজরুল ইসলাম", mother: "আয়েশা সিদ্দিকা", phone: "01722222222", blood: "B+", nid: "234567890", fb: "#", balance: 1500, img: "https://via.placeholder.com/90" },
+        "103": { name: "তামিম ইকবাল", role: "কোষাধ্যক্ষ", address: "বনানী, ঢাকা", father: "মোঃ জহিরুল হক", mother: "ফাতেমা বেগম", phone: "01733333333", blood: "O+", nid: "345678901", fb: "#", balance: 3000, img: "https://via.placeholder.com/90" },
+        "104": { name: "মুশফিকুর রহিম", role: "সদস্য", address: "মিরপুর, ঢাকা", father: "মোঃ মাহাবুব আলম", mother: "খাদিজা বেগম", phone: "01744444444", blood: "AB+", nid: "456789012", fb: "#", balance: 1000, img: "https://via.placeholder.com/90" },
+        "105": { name: "মাহমুদুল্লাহ রিয়াদ", role: "সদস্য", address: "সাভার, ঢাকা", father: "মোঃ লিয়াকত আলী", mother: "হাসনা বেগম", phone: "01755555555", blood: "A-", nid: "567890123", fb: "#", balance: 1200, img: "https://via.placeholder.com/90" },
+        "106": { name: "মোস্তাফিজুর রহমান", role: "সদস্য", address: "সাতক্ষীরা", father: "মোঃ আবুল কাসেম", mother: "মরিয়ম বেগম", phone: "01766666666", blood: "O-", nid: "678901234", fb: "#", balance: 800, img: "https://via.placeholder.com/90" },
+        "107": { name: "লিটন দাস", role: "সদস্য", address: "দিনাজপুর", father: "বিকাশ দাস", mother: "মিতু দাস", phone: "01777777777", blood: "B-", nid: "789012345", fb: "#", balance: 2500, img: "https://via.placeholder.com/90" },
+        "108": { name: "তাসকিন আহমেদ", role: "সদস্য", address: "মোহাম্মদপুর, ঢাকা", father: "মোঃ আব্দুর রশিদ", mother: "নাহার বেগম", phone: "01788888888", blood: "A+", nid: "890123456", fb: "#", balance: 1100, img: "https://via.placeholder.com/90" },
+        "109": { name: "মেহেদী হাসান মিরাজ", role: "সদস্য", address: "খুলনা", father: "মোঃ জালাল আহমেদ", mother: "রেহানা পারভীন", phone: "01799999999", blood: "O+", nid: "901234567", fb: "#", balance: 1400, img: "https://via.placeholder.com/90" },
+        "110": { name: "শরিফুল ইসলাম", role: "সদস্য", address: "পঞ্চগড়", father: "মোঃ হাসিবুর রহমান", mother: "সাজেদা বেগম", phone: "01811111111", blood: "AB-", nid: "012345678", fb: "#", balance: 500, img: "https://via.placeholder.com/90" }
+    };
+    
+    let totalFund = 15000;
+    const SECURITY = { depo: "5555", admin: "1234" };
+
+    // ডাটাবেস থেকে রিয়েল টাইম ডেটা শোনা
+    database.ref('orgStatus').on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+            totalFund = data.totalFund;
+            document.getElementById("orgTotalDisplay").innerText = totalFund;
+        }
+    });
+
+    function searchUser() {
+        let id = document.getElementById("searchId").value;
+        let res = document.getElementById("profileResult");
+        if(members[id]) {
+            let m = members[id];
+            document.getElementById("pName").innerText = m.name;
+            document.getElementById("pRole").innerText = m.role;
+            document.getElementById("pAddress").innerText = m.address;
+            document.getElementById("pFather").innerText = m.father;
+            document.getElementById("pMother").innerText = m.mother;
+            document.getElementById("pPhone").innerText = m.phone;
+            document.getElementById("pBlood").innerText = m.blood;
+            document.getElementById("pNID").innerText = m.nid;
+            document.getElementById("pFB").href = m.fb;
+            document.getElementById("pBalance").innerText = m.balance;
+            document.getElementById("pImg").src = m.img;
+            res.style.display = "block";
+        } else {
+            alert("সঠিক সদস্য আইডি দিন!");
+            res.style.display = "none";
+        }
+    }
+
+    function addMoney() {
+        let id = document.getElementById("depoId").value;
+        let amount = parseInt(document.getElementById("depoAmount").value);
+        let pin = document.getElementById("depoPin").value;
+
+        if (pin !== SECURITY.depo) return alert("ভুল সিকিউরিটি পিন!");
+
+        if(members[id] && amount > 0) {
+            members[id].balance += amount;
+            totalFund += amount;
+            
+            // ফায়ারবেসে আপডেট করা
+            database.ref('orgStatus').set({ totalFund: totalFund });
+            database.ref('logs').push({
+                msg: `[+] জমা: ৳${amount} (ID: ${id})`,
+                time: new Date().toLocaleString('bn-BD')
+            });
+
+            updateUI(`[+] জমা: ৳${amount} (ID: ${id})`);
+            alert("সফলভাবে জমা হয়েছে!");
+            document.getElementById("depoAmount").value = "";
+            document.getElementById("depoPin").value = "";
+        }
+    }
+
+    function withdrawMoney() {
+        let amount = parseInt(document.getElementById("expAmount").value);
+        let reason = document.getElementById("expReason").value;
+        let pin = document.getElementById("adminPin").value;
+
+        if (pin !== SECURITY.admin) return alert("ভুল এডমিন পিন!");
+
+        if (amount > 0 && amount <= totalFund) {
+            totalFund -= amount;
+            
+            // ফায়ারবেসে আপডেট করা
+            database.ref('orgStatus').set({ totalFund: totalFund });
+            database.ref('logs').push({
+                msg: `[-] খরচ: ৳${amount} (${reason})`,
+                time: new Date().toLocaleString('bn-BD')
+            });
+
+            updateUI(`[-] খরচ: ৳${amount} (${reason})`);
+            alert("খরচ সফল হয়েছে!");
+        }
+    }
+
+    function updateUI(msg) {
+        document.getElementById("orgTotalDisplay").innerText = totalFund;
+        let logList = document.getElementById("logList");
+        let now = new Date().toLocaleString('bn-BD');
+        logList.innerHTML = `<div class="log-item"><b>${msg}</b><span style="font-size:10px; color:#999;">${now}</span></div>` + logList.innerHTML;
+    }
+
+    function toggleSec(id) {
+        let sec = document.getElementById(id);
+        sec.style.display = (sec.style.display === "block") ? "none" : "block";
+    }
+</script>
+
+</body>
+</html>
