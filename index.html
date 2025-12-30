@@ -3,33 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>সংগঠন ম্যানেজমেন্ট সিস্টেম - সিকিউর প্রো</title>
+    <title>BICS - স্মার্ট ম্যানেজমেন্ট সিস্টেম</title>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 
     <style>
         :root { --primary: #27ae60; --danger: #e74c3c; --blue: #2196f3; --dark: #2c3e50; }
         body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 10px; }
-        .container { max-width: 480px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        .total-card { background: linear-gradient(135deg, var(--dark), #456789); color: white; padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 20px; }
-        .total-card h1 { font-size: 32px; margin: 10px 0; color: #f1c40f; }
-        .box { background: #fff; padding: 15px; border-radius: 10px; border: 1px solid #ddd; margin-bottom: 15px; }
-        h3 { margin-top: 0; font-size: 18px; border-bottom: 2px solid #f4f4f4; padding-bottom: 8px; }
-        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        button { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; transition: 0.3s; }
-        .btn-search { background: var(--primary); }
+        .container { max-width: 550px; margin: auto; }
+        .total-card { background: linear-gradient(135deg, var(--dark), #456789); color: white; padding: 20px; border-radius: 15px; text-align: center; margin-bottom: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .total-card h1 { font-size: 35px; margin: 10px 0; color: #f1c40f; }
+        .box { background: white; padding: 20px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        h3 { margin-top: 0; font-size: 18px; border-bottom: 2px solid #eee; padding-bottom: 8px; color: var(--dark); text-align: center; }
+        input, select { width: 100%; padding: 10px; margin: 6px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
+        .row { display: flex; gap: 10px; }
+        button { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; margin-top: 10px; transition: 0.3s; }
+        .btn-search { background: var(--dark); }
+        .btn-reg { background: var(--primary); }
         .btn-depo { background: var(--blue); }
         .btn-exp { background: var(--danger); }
-        #profileResult { display: none; padding: 15px; background: #fff; border-radius: 10px; border: 2px solid var(--primary); margin-top: 10px; text-align: left; }
-        .profile-header { text-align: center; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
-        .profile-img { width: 90px; height: 90px; border-radius: 50%; border: 3px solid var(--primary); object-fit: cover; }
-        .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #eee; font-size: 14px; }
-        .info-row b { color: #555; min-width: 100px; }
-        .info-row span { text-align: right; color: #333; }
-        .section-title { background: #eee; padding: 12px; margin-top: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        .hidden-content { display: none; padding: 10px; background: #fff; border: 1px solid #eee; border-radius: 0 0 8px 8px; max-height: 250px; overflow-y: auto; }
-        .log-item { padding: 8px; border-bottom: 1px solid #eee; font-size: 13px; display: flex; flex-direction: column; }
-        .btn-setup { background: #8e44ad; font-size: 12px; margin-top: 20px; opacity: 0.8; }
+        .preview-img { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; display: none; margin: 10px auto; border: 3px solid var(--primary); }
+        #profileResult { display: none; text-align: left; padding: 15px; border: 2px solid var(--primary); border-radius: 10px; background: #fff; margin-top: 15px; }
+        .profile-header { text-align: center; margin-bottom: 10px; }
+        .info-item { border-bottom: 1px solid #eee; padding: 5px 0; font-size: 14px; }
+        .log-list { max-height: 150px; overflow-y: auto; font-size: 13px; background: #eee; padding: 10px; border-radius: 8px; }
     </style>
 </head>
 <body>
@@ -41,56 +38,82 @@
     </div>
 
     <div class="box">
-        <h3>🔍 সদস্য প্রোফাইল</h3>
-        <input type="number" id="searchId" placeholder="সদস্য আইডি দিন">
-        <button class="btn-search" onclick="searchUser()">প্রোফাইল দেখুন</button>
+        <h3>🔍 সদস্য প্রোফাইল সার্চ</h3>
+        <input type="number" id="searchId" placeholder="সদস্য আইডি দিয়ে সার্চ দিন">
+        <button class="btn-search" onclick="searchMember()">সার্চ করুন</button>
         
         <div id="profileResult">
             <div class="profile-header">
-                <img id="pImg" src="" class="profile-img">
-                <h3 id="pName" style="margin:5px 0; color: var(--primary);"></h3>
-                <span id="pRole" style="background: #e8f5e9; padding: 2px 10px; border-radius: 10px; font-size: 12px; color: var(--primary);"></span>
+                <img id="pImg" class="preview-img" style="display:inline-block;">
+                <h2 id="pName" style="margin:5px 0; color: var(--primary);"></h2>
+                <span id="pTitle" style="color: #666; font-style: italic; font-weight: bold;"></span>
             </div>
-            
-            <div class="info-row"><b>ঠিকানা:</b> <span id="pAddress"></span></div>
-            <div class="info-row"><b>পিতার নাম:</b> <span id="pFather"></span></div>
-            <div class="info-row"><b>মাতার নাম:</b> <span id="pMother"></span></div>
-            <div class="info-row"><b>ফোন নম্বর:</b> <span id="pPhone"></span></div>
-            <div class="info-row"><b>রক্তের গ্রুপ:</b> <span id="pBlood" style="color:red; font-weight:bold;"></span></div>
-            <div class="info-row"><b>এনআইডি:</b> <span id="pNID"></span></div>
-            <div class="info-row"><b>ফেসবুক:</b> <a id="pFB" href="#" target="_blank" style="text-decoration:none; color:var(--blue);">ভিজিট করুন</a></div>
-            
-            <div class="info-row" style="border:none; margin-top:10px; font-size:16px; background: #f0fdf4; padding: 10px; border-radius: 8px;">
-                <b>ব্যক্তিগত তহবিল:</b> 
-                <span style="color:var(--primary); font-weight:bold;">৳ <span id="pBalance">0</span></span>
-            </div>
+            <div class="info-item"><b>পিতার নাম:</b> <span id="pFather"></span></div>
+            <div class="info-item"><b>মাতার নাম:</b> <span id="pMother"></span></div>
+            <div class="info-item"><b>ঠিকানা:</b> <span id="pAddress"></span></div>
+            <div class="info-item"><b>এনআইডি:</b> <span id="pNid"></span></div>
+            <div class="info-item"><b>রক্তের গ্রুপ:</b> <span id="pBlood"></span></div>
+            <div class="info-item"><b>ফোন:</b> <span id="pPhone"></span></div>
+            <div class="info-item"><b>ফেসবুক:</b> <a id="pFb" target="_blank" style="color: var(--blue); text-decoration: none;">প্রোফাইল লিঙ্ক</a></div>
+            <div class="info-item" style="background:#e8f5e9; padding: 10px; border-radius: 5px; margin-top:10px; text-align: center;"><b>ব্যক্তিগত তহবিল:</b> ৳ <span id="pBalance" style="font-size: 18px; color: var(--primary);">0</span></div>
         </div>
     </div>
 
-    <div class="box" style="border-left: 5px solid var(--blue);">
-        <h3>💰 টাকা জমা দিন</h3>
-        <input type="number" id="depoId" placeholder="সদস্য আইডি">
-        <input type="number" id="depoAmount" placeholder="টাকার পরিমাণ">
-        <input type="password" id="depoPin" placeholder="জমা পিন দিন">
-        <button class="btn-depo" onclick="addMoney()">জমা নিশ্চিত করুন</button>
+    <div class="box">
+        <h3>📝 নতুন সদস্য নিবন্ধন</h3>
+        <div class="row">
+            <input type="text" id="regTitle" placeholder="পদবী">
+            <input type="number" id="regId" placeholder="আইডি">
+        </div>
+        <input type="text" id="regName" placeholder="পুরো নাম">
+        <div class="row">
+            <input type="text" id="regFather" placeholder="পিতার নাম">
+            <input type="text" id="regMother" placeholder="মাতার নাম">
+        </div>
+        <input type="text" id="regAddress" placeholder="স্থায়ী ঠিকানা">
+        <div class="row">
+            <input type="number" id="regNid" placeholder="এনআইডি নাম্বার">
+            <select id="regBlood">
+                <option value="">রক্তের গ্রুপ</option>
+                <option value="A+">A+</option><option value="A-">A-</option>
+                <option value="B+">B+</option><option value="B-">B-</option>
+                <option value="O+">O+</option><option value="O-">O-</option>
+                <option value="AB+">AB+</option><option value="AB-">AB-</option>
+            </select>
+        </div>
+        <input type="text" id="regFb" placeholder="ফেসবুক প্রোফাইল লিঙ্ক">
+        <input type="text" id="regPhone" placeholder="মোবাইল নম্বর">
+        
+        <label style="font-size: 12px; color: #666;">সদস্যের ছবি (গ্যালারি থেকে):</label>
+        <input type="file" id="regPhoto" accept="image/*" onchange="previewImg(this)">
+        <img id="imgPrev" class="preview-img">
+        
+        <input type="password" id="regPin" placeholder="নিবন্ধন পিন দিন">
+        <button class="btn-reg" onclick="saveMember()">সদস্য সেভ করুন</button>
     </div>
 
-    <div class="box" style="border-left: 5px solid var(--danger);">
-        <h3>💸 খরচ (Admin)</h3>
-        <input type="number" id="expAmount" placeholder="পরিমাণ">
-        <input type="text" id="expReason" placeholder="কারণ">
-        <input type="password" id="adminPin" placeholder="এডমিন পিন দিন">
-        <button class="btn-exp" onclick="withdrawMoney()">খরচ নিশ্চিত করুন</button>
+    <div class="box">
+        <h3>💰 লেনদেন (জমা ও খরচ)</h3>
+        <input type="number" id="transId" placeholder="সদস্য আইডি (শুধুমাত্র জমার জন্য)">
+        <input type="number" id="transAmount" placeholder="টাকার পরিমাণ">
+        <input type="text" id="transReason" placeholder="লেনদেনের কারণ">
+        <input type="password" id="transPin" placeholder="পিন কোড দিন">
+        <div class="row">
+            <button class="btn-depo" onclick="addMoney()">টাকা জমা</button>
+            <button class="btn-exp" onclick="withdrawMoney()">টাকা খরচ</button>
+        </div>
     </div>
 
-    <div class="section-title" onclick="toggleSec('statement')">📊 লেনদেনের ইতিহাস (সর্বশেষ ২০টি)</div>
-    <div id="statement" class="hidden-content">
-        <div id="logList">লোডিং...</div>
+    <div class="box">
+        <h3>📊 সর্বশেষ লেনদেন ইতিহাস</h3>
+        <div id="logList" class="log-list">লোডিং...</div>
     </div>
 
+    <button style="background:#8e44ad; font-size:10px; margin-bottom:50px;" onclick="setupSecurity()">Initial PIN Setup</button>
 </div>
 
 <script>
+    // ফায়ারবেস কনফিগারেশন
     const firebaseConfig = {
         databaseURL: "https://coffee-spark-ai-barista-46e11-default-rtdb.firebaseio.com/",
     };
@@ -99,105 +122,150 @@
 
     let totalFund = 0;
 
-    // ১. রিয়েল-টাইম ফান্ড এবং ইতিহাস রিড (অপ্টিমাইজড)
+    // ডাটা লোড করা
     database.ref('totalFund').on('value', (s) => {
         totalFund = s.val() || 0;
         document.getElementById("orgTotalDisplay").innerText = totalFund;
     });
 
-    database.ref('logs').limitToLast(20).on('value', (snapshot) => {
-        let logList = document.getElementById("logList");
-        logList.innerHTML = "";
-        if(snapshot.exists()){
-            snapshot.forEach(child => {
-                let log = child.val();
-                logList.innerHTML = `<div class="log-item"><b>${log.msg}</b><small>${log.time}</small></div>` + logList.innerHTML;
-            });
-        }
+    database.ref('logs').limitToLast(10).on('value', (s) => {
+        let list = document.getElementById("logList");
+        list.innerHTML = "";
+        s.forEach(child => {
+            let log = child.val();
+            list.innerHTML = `<div style="padding:5px 0;">• ${log.msg} <br><small style="color:#888;">${log.time}</small></div><hr style="border:0; border-top:1px solid #ddd;">` + list.innerHTML;
+        });
     });
 
-    // ২. প্রোফাইল সার্চ (১ লক্ষ সদস্যের জন্য উপযুক্ত)
-    async function searchUser() {
-        let id = document.getElementById("searchId").value;
+    function previewImg(input) {
+        if (input.files && input.files[0]) {
+            let reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('imgPrev').src = e.target.result;
+                document.getElementById('imgPrev').style.display = 'block';
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    // ১. সদস্য প্রোফাইল সার্চ
+    async function searchMember() {
+        const id = document.getElementById('searchId').value;
         if(!id) return alert("আইডি দিন!");
         
         const snap = await database.ref('members/' + id).once('value');
-        if(snap.exists()){
-            let m = snap.val();
-            document.getElementById("pName").innerText = m.name;
-            document.getElementById("pRole").innerText = m.role;
-            document.getElementById("pAddress").innerText = m.address;
-            document.getElementById("pFather").innerText = m.father;
-            document.getElementById("pMother").innerText = m.mother;
-            document.getElementById("pPhone").innerText = m.phone;
-            document.getElementById("pBlood").innerText = m.blood;
-            document.getElementById("pNID").innerText = m.nid;
-            document.getElementById("pBalance").innerText = m.balance;
-            document.getElementById("pImg").src = m.img || "https://via.placeholder.com/90";
-            document.getElementById("profileResult").style.display = "block";
+        if (snap.exists()) {
+            const m = snap.val();
+            document.getElementById('pName').innerText = m.name;
+            document.getElementById('pTitle').innerText = m.title || "সদস্য";
+            document.getElementById('pFather').innerText = m.father || "-";
+            document.getElementById('pMother').innerText = m.mother || "-";
+            document.getElementById('pAddress').innerText = m.address || "-";
+            document.getElementById('pNid').innerText = m.nid || "-";
+            document.getElementById('pBlood').innerText = m.blood || "-";
+            document.getElementById('pPhone').innerText = m.phone || "-";
+            document.getElementById('pFb').href = m.fb || "#";
+            document.getElementById('pBalance').innerText = m.balance;
+            document.getElementById('pImg').src = m.img;
+            document.getElementById('pImg').style.display = 'inline-block';
+            document.getElementById('profileResult').style.display = 'block';
         } else {
-            alert("সদস্য পাওয়া যায়নি!");
+            alert("এই আইডিতে কোনো সদস্য পাওয়া যায়নি!");
         }
     }
 
-    // ৩. টাকা জমা (সিকিউর পিন চেক)
-    async function addMoney() {
-        let id = document.getElementById("depoId").value;
-        let amount = parseInt(document.getElementById("depoAmount").value);
-        let pin = document.getElementById("depoPin").value;
+    // ২. সদস্য সেভ
+    async function saveMember() {
+        const id = document.getElementById('regId').value;
+        const name = document.getElementById('regName').value;
+        const file = document.getElementById('regPhoto').files[0];
+        const inputPin = document.getElementById('regPin').value;
 
-        // ডাটাবেস থেকে পিন চেক
+        const pinSnap = await database.ref('security/adminPin').once('value');
+        if (inputPin !== pinSnap.val()) return alert("ভুল পিন! মেম্বার সেভ করা সম্ভব নয়।");
+
+        if (!id || !name || !file) return alert("আইডি, নাম এবং ছবি দিন!");
+
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = function(e) {
+            const img = new Image();
+            img.src = e.target.result;
+            img.onload = async function() {
+                const canvas = document.createElement('canvas');
+                const MAX_WIDTH = 300;
+                canvas.width = MAX_WIDTH;
+                canvas.height = img.height * (MAX_WIDTH / img.width);
+                canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+                const compressedImg = canvas.toDataURL("image/jpeg", 0.6);
+
+                await database.ref('members/' + id).set({
+                    id: id, title: document.getElementById('regTitle').value,
+                    name: name, father: document.getElementById('regFather').value,
+                    mother: document.getElementById('regMother').value,
+                    address: document.getElementById('regAddress').value,
+                    nid: document.getElementById('regNid').value,
+                    blood: document.getElementById('regBlood').value,
+                    fb: document.getElementById('regFb').value,
+                    phone: document.getElementById('regPhone').value,
+                    img: compressedImg, balance: 0
+                });
+                alert("সদস্য সফলভাবে নিবন্ধিত!");
+                location.reload();
+            };
+        };
+    }
+
+    // ৩. টাকা জমা
+    async function addMoney() {
+        const id = document.getElementById('transId').value;
+        const amount = parseInt(document.getElementById('transAmount').value);
+        const reason = document.getElementById('transReason').value || "মাসিক চাঁদা";
+        const pin = document.getElementById('transPin').value;
+
         const pinSnap = await database.ref('security/depoPin').once('value');
-        if (pin !== pinSnap.val()) return alert("ভুল সিকিউরিটি পিন!");
+        if (pin !== pinSnap.val()) return alert("ভুল পিন!");
 
         const userSnap = await database.ref('members/' + id).once('value');
-        if(userSnap.exists() && amount > 0){
-            let m = userSnap.val();
-            let newBal = (m.balance || 0) + amount;
-            
+        if (userSnap.exists() && amount > 0) {
+            let newBal = (userSnap.val().balance || 0) + amount;
             await database.ref('members/' + id).update({ balance: newBal });
             await database.ref('totalFund').set(totalFund + amount);
-            await database.ref('logs').push({
-                msg: `[+] জমা: ৳${amount} (ID: ${id})`,
-                time: new Date().toLocaleString('bn-BD')
+            await database.ref('logs').push({ 
+                msg: `[+] জমা: ৳${amount} (ID: ${id}) - কারণ: ${reason}`, 
+                time: new Date().toLocaleString('bn-BD') 
             });
-            alert("সফলভাবে সেভ হয়েছে!");
-            document.getElementById("depoAmount").value = "";
-            document.getElementById("depoPin").value = "";
-        }
+            alert("টাকা জমা হয়েছে!");
+            location.reload();
+        } else alert("সদস্য পাওয়া যায়নি বা ভুল তথ্য!");
     }
 
-    // ৪. খরচ (এডমিন পিন চেক)
+    // ৪. খরচ
     async function withdrawMoney() {
-        let amount = parseInt(document.getElementById("expAmount").value);
-        let reason = document.getElementById("expReason").value;
-        let pin = document.getElementById("adminPin").value;
+        const amount = parseInt(document.getElementById('transAmount').value);
+        const reason = document.getElementById('transReason').value;
+        const pin = document.getElementById('transPin').value;
 
         const pinSnap = await database.ref('security/adminPin').once('value');
         if (pin !== pinSnap.val()) return alert("ভুল এডমিন পিন!");
 
-        if (amount > 0 && amount <= totalFund) {
+        if (amount > 0 && amount <= totalFund && reason) {
             await database.ref('totalFund').set(totalFund - amount);
-            await database.ref('logs').push({
-                msg: `[-] খরচ: ৳${amount} (${reason})`,
-                time: new Date().toLocaleString('bn-BD')
+            await database.ref('logs').push({ 
+                msg: `[-] খরচ: ৳${amount} - কারণ: ${reason}`, 
+                time: new Date().toLocaleString('bn-BD') 
             });
-            alert("খরচ সফল হয়েছে!");
-        }
+            alert("খরচ সম্পন্ন!");
+            location.reload();
+        } else alert("পর্যাপ্ত ব্যালেন্স নেই বা কারণ লিখেননি!");
     }
 
-    // ৫. ডাটাবেস সেটআপ (প্রথমবার ডাটাবেসে পিন সেভ করার জন্য)
-    function setupDatabase() {
+    // ৫. সিকিউরিটি পিন সেটআপ (একবার করে বাটনটি ডিলিট করে দেবেন)
+    function setupSecurity() {
         database.ref('security').set({
+           
         });
-        // ১০ জন ডেমো মেম্বার অ্যাড করা (বাকিরা আইডি অনুযায়ী পরে অ্যাড হবে)
-        database.ref('totalFund').set(15000);
-        alert("সিকিউরিটি পিন ডাটাবেসে সেভ হয়েছে! এখন ইনস্পেক্ট এলিমেন্ট করলেও পিন দেখা যাবে না।");
-    }
-
-    function toggleSec(id) {
-        let sec = document.getElementById(id);
-        sec.style.display = (sec.style.display === "block") ? "none" : "block";
+        alert("পিন সেটআপ সম্পন্ন! এখন এই বাটনটি কোড থেকে মুছে ফেলুন।");
     }
 </script>
 </body>
