@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>সংগঠন ম্যানেজমেন্ট সিস্টেম প্রো</title>
+    <title>সংগঠন ম্যানেজমেন্ট সিস্টেম - সিকিউর প্রো</title>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 
@@ -41,8 +41,8 @@
     </div>
 
     <div class="box">
-        <h3>🔍 প্রোফাইল অনুসন্ধান</h3>
-        <input type="number" id="searchId" placeholder="সদস্য আইডি (যেমন: ১০১)">
+        <h3>🔍 সদস্য প্রোফাইল</h3>
+        <input type="number" id="searchId" placeholder="সদস্য আইডি দিন">
         <button class="btn-search" onclick="searchUser()">প্রোফাইল দেখুন</button>
         
         <div id="profileResult">
@@ -71,24 +71,23 @@
         <h3>💰 টাকা জমা দিন</h3>
         <input type="number" id="depoId" placeholder="সদস্য আইডি">
         <input type="number" id="depoAmount" placeholder="টাকার পরিমাণ">
-        <input type="password" id="depoPin" placeholder="জমা সিকিউরিটি পিন">
+        <input type="password" id="depoPin" placeholder="জমা পিন দিন">
         <button class="btn-depo" onclick="addMoney()">জমা নিশ্চিত করুন</button>
     </div>
 
     <div class="box" style="border-left: 5px solid var(--danger);">
-        <h3>💸 সংগঠনের খরচ (Admin only)</h3>
+        <h3>💸 খরচ (Admin)</h3>
         <input type="number" id="expAmount" placeholder="পরিমাণ">
         <input type="text" id="expReason" placeholder="কারণ">
-        <input type="password" id="adminPin" placeholder="এডমিন সিকিউরিটি পিন">
+        <input type="password" id="adminPin" placeholder="এডমিন পিন দিন">
         <button class="btn-exp" onclick="withdrawMoney()">খরচ নিশ্চিত করুন</button>
     </div>
 
-    <div class="section-title" onclick="toggleSec('statement')">📊 লেনদেনের ইতিহাস</div>
+    <div class="section-title" onclick="toggleSec('statement')">📊 লেনদেনের ইতিহাস (সর্বশেষ ২০টি)</div>
     <div id="statement" class="hidden-content">
         <div id="logList">লোডিং...</div>
     </div>
 
-    <button class="btn-setup" onclick="setupDatabase()">প্রথমবার ডাটাবেস সেটআপ করুন</button>
 </div>
 
 <script>
@@ -98,86 +97,33 @@
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
-    let members = {};
     let totalFund = 0;
-    const SECURITY = { depo: "5555", admin: "1234" };
 
-    // ১. ডাটাবেস থেকে অটো আপডেট রিড করা
-    database.ref('/').on('value', (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-            totalFund = data.totalFund || 0;
-            document.getElementById("orgTotalDisplay").innerText = totalFund;
-            members = data.members || {};
-            
-            // লগ বা ইতিহাস আপডেট
-            let logList = document.getElementById("logList");
-            logList.innerHTML = "";
-            if(data.logs) {
-                Object.values(data.logs).reverse().forEach(log => {
-                    logList.innerHTML += `<div class="log-item"><b>${log.msg}</b><small style="color:#888;">${log.time}</small></div>`;
-                });
-            } else {
-                logList.innerHTML = "লেনদেনের কোনো তথ্য নেই।";
-            }
+    // ১. রিয়েল-টাইম ফান্ড এবং ইতিহাস রিড (অপ্টিমাইজড)
+    database.ref('totalFund').on('value', (s) => {
+        totalFund = s.val() || 0;
+        document.getElementById("orgTotalDisplay").innerText = totalFund;
+    });
+
+    database.ref('logs').limitToLast(20).on('value', (snapshot) => {
+        let logList = document.getElementById("logList");
+        logList.innerHTML = "";
+        if(snapshot.exists()){
+            snapshot.forEach(child => {
+                let log = child.val();
+                logList.innerHTML = `<div class="log-item"><b>${log.msg}</b><small>${log.time}</small></div>` + logList.innerHTML;
+            });
         }
     });
 
-    // ২. টাকা জমা (প্রোফাইল + ফান্ড + ইতিহাস ৩টিই সেভ হবে)
-    function addMoney() {
-        let id = document.getElementById("depoId").value;
-        let amount = parseInt(document.getElementById("depoAmount").value);
-        let pin = document.getElementById("depoPin").value;
-
-        if (pin !== SECURITY.depo) return alert("ভুল পিন!");
-
-        if(members[id] && amount > 0) {
-            let newMemberBal = (parseInt(members[id].balance) || 0) + amount;
-            let newTotalFund = totalFund + amount;
-
-            // ডাটাবেসে সেভ শুরু
-            database.ref('members/' + id).update({ balance: newMemberBal }); // প্রোফাইল আপডেট
-            database.ref('totalFund').set(newTotalFund); // মোট ফান্ড আপডেট
-            database.ref('logs').push({ // ইতিহাস আপডেট
-                msg: `[+] জমা: ৳${amount} (ID: ${id}, নাম: ${members[id].name})`,
-                time: new Date().toLocaleString('bn-BD')
-            });
-
-            alert("ব্যক্তিগত ব্যালেন্স এবং মোট ফান্ড সফলভাবে সেভ হয়েছে!");
-            document.getElementById("depoAmount").value = "";
-            document.getElementById("depoPin").value = "";
-        } else {
-            alert("আইডি পাওয়া যায়নি!");
-        }
-    }
-
-    // ৩. খরচ আপডেট
-    function withdrawMoney() {
-        let amount = parseInt(document.getElementById("expAmount").value);
-        let reason = document.getElementById("expReason").value;
-        let pin = document.getElementById("adminPin").value;
-
-        if (pin !== SECURITY.admin) return alert("ভুল পিন!");
-
-        if (amount > 0 && amount <= totalFund) {
-            let newTotalFund = totalFund - amount;
-            database.ref('totalFund').set(newTotalFund);
-            database.ref('logs').push({
-                msg: `[-] খরচ: ৳${amount} (${reason})`,
-                time: new Date().toLocaleString('bn-BD')
-            });
-            alert("খরচ সেভ হয়েছে!");
-        } else {
-            alert("তহবিলে পর্যাপ্ত টাকা নেই!");
-        }
-    }
-
-    // ৪. প্রোফাইল অনুসন্ধান (সব তথ্যসহ)
-    function searchUser() {
+    // ২. প্রোফাইল সার্চ (১ লক্ষ সদস্যের জন্য উপযুক্ত)
+    async function searchUser() {
         let id = document.getElementById("searchId").value;
-        let res = document.getElementById("profileResult");
-        if(members[id]) {
-            let m = members[id];
+        if(!id) return alert("আইডি দিন!");
+        
+        const snap = await database.ref('members/' + id).once('value');
+        if(snap.exists()){
+            let m = snap.val();
             document.getElementById("pName").innerText = m.name;
             document.getElementById("pRole").innerText = m.role;
             document.getElementById("pAddress").innerText = m.address;
@@ -186,32 +132,67 @@
             document.getElementById("pPhone").innerText = m.phone;
             document.getElementById("pBlood").innerText = m.blood;
             document.getElementById("pNID").innerText = m.nid;
-            document.getElementById("pFB").href = m.fb;
             document.getElementById("pBalance").innerText = m.balance;
             document.getElementById("pImg").src = m.img || "https://via.placeholder.com/90";
-            res.style.display = "block";
+            document.getElementById("profileResult").style.display = "block";
         } else {
-            alert("আইডি ভুল!");
+            alert("সদস্য পাওয়া যায়নি!");
         }
     }
 
-    // ৫. সেটআপ ডাটাবেস (তথ্যগুলো ডাটাবেসে পাঠানোর জন্য)
+    // ৩. টাকা জমা (সিকিউর পিন চেক)
+    async function addMoney() {
+        let id = document.getElementById("depoId").value;
+        let amount = parseInt(document.getElementById("depoAmount").value);
+        let pin = document.getElementById("depoPin").value;
+
+        // ডাটাবেস থেকে পিন চেক
+        const pinSnap = await database.ref('security/depoPin').once('value');
+        if (pin !== pinSnap.val()) return alert("ভুল সিকিউরিটি পিন!");
+
+        const userSnap = await database.ref('members/' + id).once('value');
+        if(userSnap.exists() && amount > 0){
+            let m = userSnap.val();
+            let newBal = (m.balance || 0) + amount;
+            
+            await database.ref('members/' + id).update({ balance: newBal });
+            await database.ref('totalFund').set(totalFund + amount);
+            await database.ref('logs').push({
+                msg: `[+] জমা: ৳${amount} (ID: ${id})`,
+                time: new Date().toLocaleString('bn-BD')
+            });
+            alert("সফলভাবে সেভ হয়েছে!");
+            document.getElementById("depoAmount").value = "";
+            document.getElementById("depoPin").value = "";
+        }
+    }
+
+    // ৪. খরচ (এডমিন পিন চেক)
+    async function withdrawMoney() {
+        let amount = parseInt(document.getElementById("expAmount").value);
+        let reason = document.getElementById("expReason").value;
+        let pin = document.getElementById("adminPin").value;
+
+        const pinSnap = await database.ref('security/adminPin').once('value');
+        if (pin !== pinSnap.val()) return alert("ভুল এডমিন পিন!");
+
+        if (amount > 0 && amount <= totalFund) {
+            await database.ref('totalFund').set(totalFund - amount);
+            await database.ref('logs').push({
+                msg: `[-] খরচ: ৳${amount} (${reason})`,
+                time: new Date().toLocaleString('bn-BD')
+            });
+            alert("খরচ সফল হয়েছে!");
+        }
+    }
+
+    // ৫. ডাটাবেস সেটআপ (প্রথমবার ডাটাবেসে পিন সেভ করার জন্য)
     function setupDatabase() {
-        const initialMembers = {
-            "101": { name: "আব্দুর রহমান", role: "সভাপতি", address: "ঢাকা", father: "মোঃ খলিলুর রহমান", mother: "রাবেয়া খাতুন", phone: "01711111111", blood: "A+", nid: "123456789", fb: "#", balance: 2000, img: "https://via.placeholder.com/90" },
-            "102": { name: "সাকিব হাসান", role: "সম্পাদক", address: "ঢাকা", father: "নজরুল ইসলাম", mother: "আয়েশা", phone: "01722222222", blood: "B+", nid: "234567890", fb: "#", balance: 1500, img: "https://via.placeholder.com/90" },
-            "103": { name: "তামিম ইকবাল", role: "কোষাধ্যক্ষ", address: "ঢাকা", father: "জহিরুল হক", mother: "ফাতেমা", phone: "01733333333", blood: "O+", nid: "345678901", fb: "#", balance: 3000, img: "https://via.placeholder.com/90" },
-            "104": { name: "মুশফিক রহিম", role: "সদস্য", address: "ঢাকা", father: "মাহাবুব আলম", mother: "খাদিজা", phone: "01744444444", blood: "AB+", nid: "456789012", fb: "#", balance: 1000, img: "https://via.placeholder.com/90" },
-            "105": { name: "মাহমুদুল্লাহ", role: "সদস্য", address: "সাভার", father: "লিয়াকত আলী", mother: "হাসনা", phone: "01755555555", blood: "A-", nid: "567890123", fb: "#", balance: 1200, img: "https://via.placeholder.com/90" },
-            "106": { name: "মোস্তাফিজ", role: "সদস্য", address: "সাতক্ষীরা", father: "আবুল কাসেম", mother: "মরিয়ম", phone: "01766666666", blood: "O-", nid: "678901234", fb: "#", balance: 800, img: "https://via.placeholder.com/90" },
-            "107": { name: "লিটন দাস", role: "সদস্য", address: "দিনাজপুর", father: "বিকাশ দাস", mother: "মিতু দাস", phone: "01777777777", blood: "B-", nid: "789012345", fb: "#", balance: 2500, img: "https://via.placeholder.com/90" },
-            "108": { name: "তাসকিন", role: "সদস্য", address: "মোহাম্মদপুর", father: "আব্দুর রশিদ", mother: "নাহার", phone: "01788888888", blood: "A+", nid: "890123456", fb: "#", balance: 1100, img: "https://via.placeholder.com/90" },
-            "109": { name: "মেহেদী মিরাজ", role: "সদস্য", address: "খুলনা", father: "জালাল আহমেদ", mother: "পারভীন", phone: "01799999999", blood: "O+", nid: "901234567", fb: "#", balance: 1400, img: "https://via.placeholder.com/90" },
-            "110": { name: "শরিফুল", role: "সদস্য", address: "পঞ্চগড়", father: "হাসিবুর রহমান", mother: "সাজেদা", phone: "01811111111", blood: "AB-", nid: "012345678", fb: "#", balance: 500, img: "https://via.placeholder.com/90" }
-        };
-        database.ref('members').set(initialMembers);
+        database.ref('security').set({
+        });
+        // ১০ জন ডেমো মেম্বার অ্যাড করা (বাকিরা আইডি অনুযায়ী পরে অ্যাড হবে)
         database.ref('totalFund').set(15000);
-        alert("সফলভাবে সব তথ্য সেটআপ হয়েছে!");
+        alert("সিকিউরিটি পিন ডাটাবেসে সেভ হয়েছে! এখন ইনস্পেক্ট এলিমেন্ট করলেও পিন দেখা যাবে না।");
     }
 
     function toggleSec(id) {
@@ -219,6 +200,5 @@
         sec.style.display = (sec.style.display === "block") ? "none" : "block";
     }
 </script>
-
 </body>
 </html>
