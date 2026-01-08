@@ -69,7 +69,6 @@
             </div>
             <button onclick="filterResults()" class="w-full bg-emerald-600 text-white font-bold py-2 rounded-lg text-sm">সার্চ করুন</button>
         </div>
-
         <div id="activityContainer" class="grid grid-cols-1 gap-4 mb-10"></div>
     </div>
 
@@ -86,11 +85,10 @@
                 <h3>🔍 সদস্য প্রোফাইল সার্চ</h3>
                 <input type="number" id="searchId" placeholder="সদস্য আইডি দিয়ে সার্চ দিন">
                 <button class="btn-search" onclick="searchMember()">সার্চ করুন</button>
-                
                 <div id="profileResult">
-                    <div class="profile-header text-center">
+                    <div class="text-center mb-2">
                         <img id="pImg" class="preview-img" style="display:inline-block;">
-                        <h2 id="pName" style="margin:5px 0; color: var(--primary); font-weight: bold;"></h2>
+                        <h2 id="pName" style="color: var(--primary); font-weight: bold;"></h2>
                         <span id="pTitle" style="color: #666; font-style: italic;"></span>
                     </div>
                     <div class="info-item"><b>পিতার নাম:</b> <span id="pFather"></span></div>
@@ -99,8 +97,8 @@
                     <div class="info-item"><b>এনআইডি:</b> <span id="pNid"></span></div>
                     <div class="info-item"><b>রক্তের গ্রুপ:</b> <span id="pBlood"></span></div>
                     <div class="info-item"><b>ফোন:</b> <span id="pPhone"></span></div>
-                    <div class="info-item"><b>ফেসবুক:</b> <a id="pFb" target="_blank" style="color: var(--blue);">প্রোফাইল লিঙ্ক</a></div>
-                    <div class="info-item" style="background:#e8f5e9; padding: 10px; border-radius: 5px; margin-top:10px; text-align: center;"><b>ব্যক্তিগত তহবিল:</b> ৳ <span id="pBalance" style="font-size: 18px; color: var(--primary);">0</span></div>
+                    <div class="info-item"><b>ফেসবুক:</b> <a id="pFb" target="_blank" style="color: var(--blue);">লিঙ্ক</a></div>
+                    <div class="info-item text-center bg-green-50 p-2 mt-2"><b>ব্যক্তিগত তহবিল:</b> ৳ <span id="pBalance" style="font-size: 18px; color: var(--primary);">0</span></div>
                 </div>
             </div>
 
@@ -111,34 +109,28 @@
                 <div class="row"><input type="text" id="regFather" placeholder="পিতার নাম"><input type="text" id="regMother" placeholder="মাতার নাম"></div>
                 <input type="text" id="regAddress" placeholder="স্থায়ী ঠিকানা">
                 <div class="row">
-                    <input type="number" id="regNid" placeholder="এনআইডি নাম্বার">
-                    <select id="regBlood">
-                        <option value="">রক্তের গ্রুপ</option>
-                        <option value="A+">A+</option><option value="A-">A-</option>
-                        <option value="B+">B+</option><option value="B-">B-</option>
-                        <option value="O+">O+</option><option value="O-">O-</option>
-                        <option value="AB+">AB+</option><option value="AB-">AB-</option>
+                    <input type="number" id="regNid" placeholder="এনআইডি"><select id="regBlood">
+                        <option value="">রক্তের গ্রুপ</option><option value="A+">A+</option><option value="B+">B+</option><option value="O+">O+</option><option value="AB+">AB+</option>
                     </select>
                 </div>
-                <input type="text" id="regFb" placeholder="ফেসবুক প্রোফাইল লিঙ্ক"><input type="text" id="regPhone" placeholder="মোবাইল নম্বর">
-                <label style="font-size: 12px; color: #666;">সদস্যের ছবি:</label>
+                <input type="text" id="regFb" placeholder="ফেসবুক প্রোফাইল"><input type="text" id="regPhone" placeholder="মোবাইল নম্বর">
                 <input type="file" id="regPhoto" accept="image/*" onchange="previewImg(this)">
                 <img id="imgPrev" class="preview-img">
-                <input type="password" id="regPin" placeholder="নিবন্ধন পিন দিন">
+                <input type="password" id="regPin" placeholder="নিবন্ধন পিন">
                 <button class="btn-reg" onclick="saveMember()">সদস্য সেভ করুন</button>
             </div>
 
             <div class="box">
-                <h3>💰 লেনদেন (জমা ও খরচ)</h3>
+                <h3>💰 লেনদেন</h3>
                 <input type="number" id="transId" placeholder="সদস্য আইডি">
                 <input type="number" id="transAmount" placeholder="টাকার পরিমাণ">
-                <input type="text" id="transReason" placeholder="লেনদেনের কারণ">
-                <input type="password" id="transPin" placeholder="পিন কোড দিন">
-                <div class="row"><button class="btn-depo" onclick="addMoney()">টাকা জমা</button><button class="btn-exp" onclick="withdrawMoney()">টাকা খরচ</button></div>
+                <input type="text" id="transReason" placeholder="কারণ">
+                <input type="password" id="transPin" placeholder="পিন">
+                <div class="row"><button class="btn-depo" onclick="addMoney()">জমা</button><button class="btn-exp" onclick="withdrawMoney()">খরচ</button></div>
             </div>
 
             <div class="box">
-                <h3>📊 সর্বশেষ লেনদেন ইতিহাস</h3>
+                <h3>📊 ইতিহাস</h3>
                 <div id="logList" class="log-list">লোডিং...</div>
             </div>
         </div>
@@ -149,7 +141,7 @@
             <h2 class="text-xl font-bold mb-5 text-yellow-400 text-center border-b border-slate-700 pb-2">অ্যাডমিন কন্ট্রোল সেন্টার</h2>
             <div class="space-y-5">
                 <div>
-                    <label class="admin-label">অ্যাডমিন পিন</label>
+                    <label class="admin-label">অ্যাডমিন পিন (১২৩৪):</label>
                     <input type="password" id="adminPin" placeholder="পিন লিখুন" class="admin-input border border-slate-700">
                 </div>
                 <div class="bg-slate-800 p-3 rounded-lg border border-slate-700">
@@ -178,38 +170,29 @@
     </div>
 
     <script>
-        // Firebase ইনিশিয়ালাইজেশন
+        // Firebase কনফিগারেশন
         const firebaseConfig = { databaseURL: "https://coffee-spark-ai-barista-46e11-default-rtdb.firebaseio.com/" };
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        // ১. লাইভ টাইম ফাংশন
         function updateTime() {
             const now = new Date();
-            const timeEl = document.getElementById('liveTime');
-            if(timeEl) timeEl.innerText = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+            document.getElementById('liveTime').innerText = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
         }
         setInterval(updateTime, 1000);
 
-        // ২. নিউজ হেডলাইন রিয়েল-টাইম লোড (Firebase থেকে)
-        database.ref('siteData/news').on('value', (snapshot) => {
-            const news = snapshot.val() || "জনসেবা পোর্টালে স্বাগতম...";
-            document.getElementById('newsDisplay').innerText = news;
+        database.ref('siteData/news').on('value', (s) => {
+            document.getElementById('newsDisplay').innerText = s.val() || "জনসেবা পোর্টালে স্বাগতম...";
         });
 
         function updateNews() {
             if(document.getElementById('adminPin').value !== "1234") return alert("ভুল পিন!");
-            const newsText = document.getElementById('newsInput').value;
-            database.ref('siteData/news').set(newsText).then(() => {
-                alert("নিউজ সেভ হয়েছে!");
-                document.getElementById('newsInput').value = "";
-            });
+            database.ref('siteData/news').set(document.getElementById('newsInput').value).then(() => alert("সেভ হয়েছে!"));
         }
 
-        // ৩. স্লাইডার ডাটা রিয়েল-টাইম লোড (Firebase থেকে)
         let sIdx = 0;
-        database.ref('siteData/slides').on('value', (snapshot) => {
-            const data = snapshot.val() ? Object.values(snapshot.val()) : [{img:'https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=800', cap: 'জনসেবাই আমাদের মূল লক্ষ্য'}];
+        database.ref('siteData/slides').on('value', (s) => {
+            const data = s.val() ? Object.values(s.val()) : [{img:'https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=800', cap: 'স্বাগতম'}];
             const container = document.getElementById('sliderContainer');
             container.innerHTML = data.map((s, i) => `<img src="${s.img}" data-cap="${s.cap}" class="slider-img ${i===0?'active':''}">`).join('');
             document.getElementById('sliderCaption').innerText = data[0].cap;
@@ -224,57 +207,55 @@
             document.getElementById('sliderCaption').innerText = imgs[sIdx].getAttribute('data-cap');
         }, 3000);
 
-        // ৪. ইমেজ রিসাইজিং এবং আপলোড (Firebase-এ স্লাইডার ও কার্যক্রম সেভ করা)
         function handleFileUpload(type) {
             if(document.getElementById('adminPin').value !== "1234") return alert("ভুল পিন!");
             const fileInput = document.getElementById(type === 'slide' ? 'slideFileInput' : 'actFileInput');
-            if(!fileInput.files[0]) return alert("ছবি সিলেক্ট করুন!");
+            if(!fileInput.files[0]) return alert("ছবি দিন!");
 
             const reader = new FileReader();
             reader.readAsDataURL(fileInput.files[0]);
-            reader.onload = (event) => {
+            reader.onload = (e) => {
                 const img = new Image();
-                img.src = event.target.result;
+                img.src = e.target.result;
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 600;
-                    canvas.width = MAX_WIDTH;
-                    canvas.height = img.height * (MAX_WIDTH / img.width);
+                    canvas.width = 600; canvas.height = img.height * (600 / img.width);
                     canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
                     const compressedImg = canvas.toDataURL('image/jpeg', 0.6);
-
                     if(type === 'slide') {
-                        database.ref('siteData/slides').push({
-                            img: compressedImg,
-                            cap: document.getElementById('slideCapInput').value
-                        }).then(() => alert("স্লাইডারে যুক্ত হয়েছে!"));
+                        database.ref('siteData/slides').push({img: compressedImg, cap: document.getElementById('slideCapInput').value});
                     } else {
                         database.ref('siteData/activities').push({
-                            title: document.getElementById('actTitle').value,
-                            div: document.getElementById('actDiv').value,
-                            dist: document.getElementById('actDist').value,
-                            upz: document.getElementById('actUpz').value,
-                            uni: document.getElementById('actUni').value,
-                            img: compressedImg
-                        }).then(() => alert("কার্যক্রম পাবলিশ হয়েছে!"));
+                            title: document.getElementById('actTitle').value, div: document.getElementById('actDiv').value,
+                            dist: document.getElementById('actDist').value, upz: document.getElementById('actUpz').value,
+                            uni: document.getElementById('actUni').value, img: compressedImg
+                        });
                     }
+                    alert("সফলভাবে সেভ হয়েছে!");
                 };
             };
         }
 
-        // ৫. জনসেবা কার্যক্রম ও ড্রপডাউন লোড (Firebase থেকে)
-        database.ref('siteData/activities').on('value', (snapshot) => {
-            const acts = snapshot.val() ? Object.values(snapshot.val()) : [];
+        database.ref('siteData/activities').on('value', (s) => {
+            const acts = s.val() ? Object.values(s.val()) : [];
             window.allActivities = acts;
             updateDropdowns(acts);
         });
 
+        // ড্রপডাউন সমস্যা সমাধান এখানে করা হয়েছে
         function updateDropdowns(acts) {
-            ['Div', 'Dist', 'Upz', 'Uni'].forEach(f => {
-                const vals = [...new Set(acts.map(i => i[f.toLowerCase()]))].filter(v => v);
-                let options = `<option value="">নির্বাচন করুন</option>`;
+            const fields = [
+                { id: 'fDiv', key: 'div', label: 'বিভাগ' },
+                { id: 'fDist', key: 'dist', label: 'জেলা' },
+                { id: 'fUpz', key: 'upz', label: 'উপজেলা' },
+                { id: 'fUni', key: 'uni', label: 'ইউনিয়ন' }
+            ];
+
+            fields.forEach(field => {
+                const vals = [...new Set(acts.map(i => i[field.key]))].filter(v => v);
+                let options = `<option value="">${field.label} নির্বাচন</option>`;
                 vals.forEach(v => options += `<option value="${v}">${v}</option>`);
-                document.getElementById('f' + f).innerHTML = options;
+                document.getElementById(field.id).innerHTML = options;
             });
         }
 
@@ -285,23 +266,17 @@
                 <div class="bg-white rounded-xl shadow-md border overflow-hidden mb-2">
                     <img src="${i.img}" class="w-full h-44 object-cover">
                     <div class="p-3"><h3 class="font-bold text-sm">${i.title}</h3><p class="text-[10px] text-emerald-600 font-bold uppercase">${i.div} > ${i.dist} > ${i.upz} > ${i.uni}</p></div>
-                </div>`).join('') || `<p class="text-center py-10">তথ্য পাওয়া যায়নি।</p>`;
+                </div>`).join('') || `<p class="text-center py-10">তথ্য নেই।</p>`;
         }
 
-        // BICS ম্যানেজমেন্ট ফাংশনালিটি (Firebase)
         let totalFund = 0;
         database.ref('totalFund').on('value', (s) => { totalFund = s.val() || 0; document.getElementById("orgTotalDisplay").innerText = totalFund; });
-        
         database.ref('logs').limitToLast(10).on('value', (s) => {
             let list = document.getElementById("logList"); list.innerHTML = "";
             s.forEach(c => { let l = c.val(); list.innerHTML = `<div class="py-1">• ${l.msg} <br><small class="text-gray-400">${l.time}</small></div><hr>` + list.innerHTML; });
         });
 
-        function previewImg(input) {
-            if (input.files && input.files[0]) {
-                let r = new FileReader(); r.onload = (e) => { document.getElementById('imgPrev').src = e.target.result; document.getElementById('imgPrev').style.display = 'block'; }; r.readAsDataURL(input.files[0]);
-            }
-        }
+        function previewImg(i) { if (i.files && i.files[0]) { let r = new FileReader(); r.onload = (e) => { document.getElementById('imgPrev').src = e.target.result; document.getElementById('imgPrev').style.display = 'block'; }; r.readAsDataURL(i.files[0]); } }
 
         async function searchMember() {
             const id = document.getElementById('searchId').value;
@@ -320,7 +295,7 @@
                 document.getElementById('pBalance').innerText = m.balance;
                 document.getElementById('pImg').src = m.img; document.getElementById('pImg').style.display = 'inline-block';
                 document.getElementById('profileResult').style.display = 'block';
-            } else alert("মেম্বার পাওয়া যায়নি!");
+            } else alert("পাওয়া যায়নি!");
         }
 
         async function saveMember() {
@@ -328,9 +303,7 @@
             if (document.getElementById('regPin').value !== pinSnap.val()) return alert("ভুল পিন!");
             const id = document.getElementById('regId').value, file = document.getElementById('regPhoto').files[0];
             if (!id || !file) return alert("আইডি ও ছবি দিন!");
-
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
+            const reader = new FileReader(); reader.readAsDataURL(file);
             reader.onload = async (e) => {
                 await database.ref('members/' + id).set({
                     id, name: document.getElementById('regName').value, title: document.getElementById('regTitle').value,
@@ -359,14 +332,14 @@
         async function withdrawMoney() {
             const amt = parseInt(document.getElementById('transAmount').value), reason = document.getElementById('transReason').value;
             const pinSnap = await database.ref('security/adminPin').once('value');
-            if (document.getElementById('transPin').value !== pinSnap.val()) return alert("ভুল এডমিন পিন!");
+            if (document.getElementById('transPin').value !== pinSnap.val()) return alert("ভুল পিন!");
             if (amt > 0 && amt <= totalFund) {
                 await database.ref('totalFund').set(totalFund - amt);
-                await database.ref('logs').push({ msg: `[-] খরচ: ৳${amt} - ${reason}`, time: new Date().toLocaleString() });
-                alert("খরচ সম্পন্ন!");
+                await database.ref('logs').push({ msg: `[-] খরচ: ৳${amt} (${reason})`, time: new Date().toLocaleString() });
+                alert("খরচ সফল!");
             }
         }
-
+        
         window.onload = () => { updateTime(); };
     </script>
 </body>
