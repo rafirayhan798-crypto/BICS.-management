@@ -121,7 +121,7 @@
             </div>
 
             <div class="box">
-                <h3>💰 লেনদেন</h3>
+                <h3>💰 লেনদেন (জমা ও খরচ)</h3>
                 <input type="number" id="transId" placeholder="সদস্য আইডি">
                 <input type="number" id="transAmount" placeholder="টাকার পরিমাণ">
                 <input type="text" id="transReason" placeholder="কারণ">
@@ -130,7 +130,7 @@
             </div>
 
             <div class="box">
-                <h3>📊 ইতিহাস</h3>
+                <h3>📊 সর্বশেষ লেনদেন ইতিহাস</h3>
                 <div id="logList" class="log-list">লোডিং...</div>
             </div>
         </div>
@@ -141,7 +141,7 @@
             <h2 class="text-xl font-bold mb-5 text-yellow-400 text-center border-b border-slate-700 pb-2">অ্যাডমিন কন্ট্রোল সেন্টার</h2>
             <div class="space-y-5">
                 <div>
-                    <label class="admin-label">অ্যাডমিন পিন (১২৩৪):</label>
+                    <label class="admin-label">অ্যাডমিন পিন</label>
                     <input type="password" id="adminPin" placeholder="পিন লিখুন" class="admin-input border border-slate-700">
                 </div>
                 <div class="bg-slate-800 p-3 rounded-lg border border-slate-700">
@@ -185,8 +185,16 @@
             document.getElementById('newsDisplay').innerText = s.val() || "জনসেবা পোর্টালে স্বাগতম...";
         });
 
-        function updateNews() {
-            if(document.getElementById('adminPin').value !== "1234") return alert("ভুল পিন!");
+        // পিন চেক করার জন্য নিরাপদ ফাংশন
+        async function verifyPin(pinType, inputPin) {
+            const snapshot = await database.ref('security/' + pinType).once('value');
+            const actualPin = snapshot.val();
+            return inputPin === String(actualPin);
+        }
+
+        async function updateNews() {
+            const isAdmin = await verifyPin('adminPin', document.getElementById('adminPin').value);
+            if(!isAdmin) return alert("ভুল পিন!");
             database.ref('siteData/news').set(document.getElementById('newsInput').value).then(() => alert("সেভ হয়েছে!"));
         }
 
@@ -207,8 +215,9 @@
             document.getElementById('sliderCaption').innerText = imgs[sIdx].getAttribute('data-cap');
         }, 3000);
 
-        function handleFileUpload(type) {
-            if(document.getElementById('adminPin').value !== "1234") return alert("ভুল পিন!");
+        async function handleFileUpload(type) {
+            const isAdmin = await verifyPin('adminPin', document.getElementById('adminPin').value);
+            if(!isAdmin) return alert("ভুল পিন!");
             const fileInput = document.getElementById(type === 'slide' ? 'slideFileInput' : 'actFileInput');
             if(!fileInput.files[0]) return alert("ছবি দিন!");
 
@@ -242,7 +251,6 @@
             updateDropdowns(acts);
         });
 
-        // ড্রপডাউন সমস্যা সমাধান এখানে করা হয়েছে
         function updateDropdowns(acts) {
             const fields = [
                 { id: 'fDiv', key: 'div', label: 'বিভাগ' },
@@ -259,14 +267,32 @@
             });
         }
 
+        // আপনার সমস্যার সমাধান এখানে করা হয়েছে
         function filterResults() {
-            const div = document.getElementById('fDiv').value, dist = document.getElementById('fDist').value, upz = document.getElementById('fUpz').value, uni = document.getElementById('fUni').value;
+            const div = document.getElementById('fDiv').value;
+            const dist = document.getElementById('fDist').value;
+            const upz = document.getElementById('fUpz').value;
+            const uni = document.getElementById('fUni').value;
+
+            // যদি কোনো এলাকা সিলেক্ট করা না থাকে
+            if (!div && !dist && !upz && !uni) {
+                document.getElementById('activityContainer').innerHTML = `
+                    <div class="text-center py-10 bg-red-50 rounded-lg border border-red-200">
+                        <p class="text-red-600 font-bold">আপনার এলাকা নির্বাচন করুন</p>
+                    </div>`;
+                return;
+            }
+
             const res = (window.allActivities || []).filter(i => (!div || i.div === div) && (!dist || i.dist === dist) && (!upz || i.upz === upz) && (!uni || i.uni === uni));
+            
             document.getElementById('activityContainer').innerHTML = res.reverse().map(i => `
                 <div class="bg-white rounded-xl shadow-md border overflow-hidden mb-2">
                     <img src="${i.img}" class="w-full h-44 object-cover">
-                    <div class="p-3"><h3 class="font-bold text-sm">${i.title}</h3><p class="text-[10px] text-emerald-600 font-bold uppercase">${i.div} > ${i.dist} > ${i.upz} > ${i.uni}</p></div>
-                </div>`).join('') || `<p class="text-center py-10">তথ্য নেই।</p>`;
+                    <div class="p-3">
+                        <h3 class="font-bold text-sm">${i.title}</h3>
+                        <p class="text-[10px] text-emerald-600 font-bold uppercase">${i.div} > ${i.dist} > ${i.upz} > ${i.uni}</p>
+                    </div>
+                </div>`).join('') || `<p class="text-center py-10">এই এলাকায় কোনো তথ্য পাওয়া যায়নি।</p>`;
         }
 
         let totalFund = 0;
@@ -299,8 +325,8 @@
         }
 
         async function saveMember() {
-            const pinSnap = await database.ref('security/adminPin').once('value');
-            if (document.getElementById('regPin').value !== pinSnap.val()) return alert("ভুল পিন!");
+            const isAdmin = await verifyPin('adminPin', document.getElementById('regPin').value);
+            if (!isAdmin) return alert("ভুল পিন!");
             const id = document.getElementById('regId').value, file = document.getElementById('regPhoto').files[0];
             if (!id || !file) return alert("আইডি ও ছবি দিন!");
             const reader = new FileReader(); reader.readAsDataURL(file);
@@ -318,8 +344,8 @@
 
         async function addMoney() {
             const id = document.getElementById('transId').value, amt = parseInt(document.getElementById('transAmount').value);
-            const pinSnap = await database.ref('security/depoPin').once('value');
-            if (document.getElementById('transPin').value !== pinSnap.val()) return alert("ভুল পিন!");
+            const isDepo = await verifyPin('depoPin', document.getElementById('transPin').value);
+            if (!isDepo) return alert("ভুল পিন!");
             const user = await database.ref('members/' + id).once('value');
             if (user.exists() && amt > 0) {
                 await database.ref('members/' + id).update({ balance: (user.val().balance || 0) + amt });
@@ -331,8 +357,8 @@
 
         async function withdrawMoney() {
             const amt = parseInt(document.getElementById('transAmount').value), reason = document.getElementById('transReason').value;
-            const pinSnap = await database.ref('security/adminPin').once('value');
-            if (document.getElementById('transPin').value !== pinSnap.val()) return alert("ভুল পিন!");
+            const isAdmin = await verifyPin('adminPin', document.getElementById('transPin').value);
+            if (!isAdmin) return alert("ভুল পিন!");
             if (amt > 0 && amt <= totalFund) {
                 await database.ref('totalFund').set(totalFund - amt);
                 await database.ref('logs').push({ msg: `[-] খরচ: ৳${amt} (${reason})`, time: new Date().toLocaleString() });
