@@ -10,7 +10,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 
     <style>
-        /* CSS অপরিবর্তিত রাখা হয়েছে */
         .slider-img { display: none; width: 100%; height: 250px; object-fit: cover; }
         .active { display: block; }
         @keyframes scrollLeft { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
@@ -59,15 +58,15 @@
     </div>
 
     <div class="container mx-auto p-4 max-w-2xl">
-        <div class="bg-white p-4 rounded-xl shadow-sm border mb-6">
-            <h3 class="text-emerald-700 font-bold mb-3 text-center border-b pb-2 text-sm">জনকল্যাণমূলক কার্যক্রম এলাকা নির্বাচন</h3>
+        <div class="bg-sky-100 p-4 rounded-xl shadow-sm border border-sky-200 mb-6">
+            <h3 class="text-sky-800 font-bold mb-3 text-center border-b border-sky-200 pb-2 text-sm uppercase">জনকল্যাণমূলক কার্যক্রম এলাকা নির্বাচন</h3>
             <div class="grid grid-cols-2 gap-2 mb-3">
-                <select id="fDiv" class="border p-2 rounded text-xs"><option value="">বিভাগ নির্বাচন</option></select>
-                <select id="fDist" class="border p-2 rounded text-xs"><option value="">জেলা নির্বাচন</option></select>
-                <select id="fUpz" class="border p-2 rounded text-xs"><option value="">উপজেলা নির্বাচন</option></select>
-                <select id="fUni" class="border p-2 rounded text-xs"><option value="">ইউনিয়ন নির্বাচন</option></select>
+                <select id="fDiv" class="border border-sky-300 p-2 rounded text-xs bg-white"><option value="">বিভাগ নির্বাচন</option></select>
+                <select id="fDist" class="border border-sky-300 p-2 rounded text-xs bg-white"><option value="">জেলা নির্বাচন</option></select>
+                <select id="fUpz" class="border border-sky-300 p-2 rounded text-xs bg-white"><option value="">উপজেলা নির্বাচন</option></select>
+                <select id="fUni" class="border border-sky-300 p-2 rounded text-xs bg-white"><option value="">ইউনিয়ন নির্বাচন</option></select>
             </div>
-            <button onclick="filterResults()" class="w-full bg-emerald-600 text-white font-bold py-2 rounded-lg text-sm">সার্চ করুন</button>
+            <button onclick="filterResults()" class="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 rounded-lg text-sm transition-colors">সার্চ করুন</button>
         </div>
         <div id="activityContainer" class="grid grid-cols-1 gap-4 mb-10"></div>
     </div>
@@ -170,7 +169,6 @@
     </div>
 
     <script>
-        // Firebase কনফিগারেশন
         const firebaseConfig = { databaseURL: "https://coffee-spark-ai-barista-46e11-default-rtdb.firebaseio.com/" };
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
@@ -185,7 +183,6 @@
             document.getElementById('newsDisplay').innerText = s.val() || "জনসেবা পোর্টালে স্বাগতম...";
         });
 
-        // পিন চেক করার জন্য নিরাপদ ফাংশন
         async function verifyPin(pinType, inputPin) {
             const snapshot = await database.ref('security/' + pinType).once('value');
             const actualPin = snapshot.val();
@@ -258,7 +255,6 @@
                 { id: 'fUpz', key: 'upz', label: 'উপজেলা' },
                 { id: 'fUni', key: 'uni', label: 'ইউনিয়ন' }
             ];
-
             fields.forEach(field => {
                 const vals = [...new Set(acts.map(i => i[field.key]))].filter(v => v);
                 let options = `<option value="">${field.label} নির্বাচন</option>`;
@@ -267,42 +263,60 @@
             });
         }
 
-        // আপনার সমস্যার সমাধান এখানে করা হয়েছে
         function filterResults() {
-            const div = document.getElementById('fDiv').value;
-            const dist = document.getElementById('fDist').value;
-            const upz = document.getElementById('fUpz').value;
-            const uni = document.getElementById('fUni').value;
-
-            // যদি কোনো এলাকা সিলেক্ট করা না থাকে
+            const div = document.getElementById('fDiv').value, dist = document.getElementById('fDist').value, upz = document.getElementById('fUpz').value, uni = document.getElementById('fUni').value;
             if (!div && !dist && !upz && !uni) {
-                document.getElementById('activityContainer').innerHTML = `
-                    <div class="text-center py-10 bg-red-50 rounded-lg border border-red-200">
-                        <p class="text-red-600 font-bold">আপনার এলাকা নির্বাচন করুন</p>
-                    </div>`;
+                document.getElementById('activityContainer').innerHTML = `<div class="text-center py-10 bg-red-50 rounded-lg border border-red-200"><p class="text-red-600 font-bold">আপনার এলাকা নির্বাচন করুন</p></div>`;
                 return;
             }
-
             const res = (window.allActivities || []).filter(i => (!div || i.div === div) && (!dist || i.dist === dist) && (!upz || i.upz === upz) && (!uni || i.uni === uni));
-            
             document.getElementById('activityContainer').innerHTML = res.reverse().map(i => `
                 <div class="bg-white rounded-xl shadow-md border overflow-hidden mb-2">
                     <img src="${i.img}" class="w-full h-44 object-cover">
-                    <div class="p-3">
-                        <h3 class="font-bold text-sm">${i.title}</h3>
-                        <p class="text-[10px] text-emerald-600 font-bold uppercase">${i.div} > ${i.dist} > ${i.upz} > ${i.uni}</p>
-                    </div>
-                </div>`).join('') || `<p class="text-center py-10">এই এলাকায় কোনো তথ্য পাওয়া যায়নি।</p>`;
+                    <div class="p-3"><h3 class="font-bold text-sm">${i.title}</h3><p class="text-[10px] text-emerald-600 font-bold uppercase">${i.div} > ${i.dist} > ${i.upz} > ${i.uni}</p></div>
+                </div>`).join('') || `<p class="text-center py-10">তথ্য নেই।</p>`;
         }
 
         let totalFund = 0;
         database.ref('totalFund').on('value', (s) => { totalFund = s.val() || 0; document.getElementById("orgTotalDisplay").innerText = totalFund; });
+        
         database.ref('logs').limitToLast(10).on('value', (s) => {
-            let list = document.getElementById("logList"); list.innerHTML = "";
-            s.forEach(c => { let l = c.val(); list.innerHTML = `<div class="py-1">• ${l.msg} <br><small class="text-gray-400">${l.time}</small></div><hr>` + list.innerHTML; });
+            let list = document.getElementById("logList"); 
+            list.innerHTML = "";
+            s.forEach(c => { 
+                let l = c.val(); 
+                const logTime = new Date(l.time).toLocaleString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true, day: '2-digit', month: 'short', year: 'numeric' });
+                list.innerHTML = `<div class="py-1">• ${l.msg} <br><small class="text-gray-400">${logTime}</small></div><hr>` + list.innerHTML; 
+            });
         });
 
-        function previewImg(i) { if (i.files && i.files[0]) { let r = new FileReader(); r.onload = (e) => { document.getElementById('imgPrev').src = e.target.result; document.getElementById('imgPrev').style.display = 'block'; }; r.readAsDataURL(i.files[0]); } }
+        async function addMoney() {
+            const id = document.getElementById('transId').value;
+            const amt = parseInt(document.getElementById('transAmount').value);
+            const reason = document.getElementById('transReason').value || "জমা";
+            const isDepo = await verifyPin('depoPin', document.getElementById('transPin').value);
+            if (!isDepo) return alert("ভুল পিন!");
+            const userSnap = await database.ref('members/' + id).once('value');
+            if (userSnap.exists() && amt > 0) {
+                const userData = userSnap.val();
+                await database.ref('members/' + id).update({ balance: (userData.balance || 0) + amt });
+                await database.ref('totalFund').set(totalFund + amt);
+                await database.ref('logs').push({ msg: `[+] জমা: ৳${amt} (ID: ${id}) - ${reason}`, time: new Date().toISOString() });
+                alert("জমা সফল!");
+            } else alert("আইডি ভুল!");
+        }
+
+        async function withdrawMoney() {
+            const amt = parseInt(document.getElementById('transAmount').value);
+            const reason = document.getElementById('transReason').value || "খরচ";
+            const isAdmin = await verifyPin('adminPin', document.getElementById('transPin').value);
+            if (!isAdmin) return alert("ভুল পিন!");
+            if (amt > 0 && amt <= totalFund) {
+                await database.ref('totalFund').set(totalFund - amt);
+                await database.ref('logs').push({ msg: `[-] খরচ: ৳${amt} - কারণ: ${reason}`, time: new Date().toISOString() });
+                alert("খরচ সফল!");
+            } else alert("পর্যাপ্ত ফান্ড নেই!");
+        }
 
         async function searchMember() {
             const id = document.getElementById('searchId').value;
@@ -329,43 +343,34 @@
             if (!isAdmin) return alert("ভুল পিন!");
             const id = document.getElementById('regId').value, file = document.getElementById('regPhoto').files[0];
             if (!id || !file) return alert("আইডি ও ছবি দিন!");
-            const reader = new FileReader(); reader.readAsDataURL(file);
+            
+            const reader = new FileReader(); 
+            reader.readAsDataURL(file);
             reader.onload = async (e) => {
-                await database.ref('members/' + id).set({
-                    id, name: document.getElementById('regName').value, title: document.getElementById('regTitle').value,
-                    father: document.getElementById('regFather').value, mother: document.getElementById('regMother').value,
-                    address: document.getElementById('regAddress').value, nid: document.getElementById('regNid').value,
-                    blood: document.getElementById('regBlood').value, fb: document.getElementById('regFb').value,
-                    phone: document.getElementById('regPhone').value, img: e.target.result, balance: 0
-                });
-                alert("নিবন্ধন সফল!");
+                const img = new Image();
+                img.src = e.target.result;
+                img.onload = async () => {
+                    // প্রোফাইল ছবি রিসাইজ (Resize) লজিক
+                    const canvas = document.createElement('canvas');
+                    const size = 300; // ৩০০ পিক্সেল যথেষ্ট
+                    canvas.width = size;
+                    canvas.height = img.height * (size / img.width);
+                    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+                    const compressedProfileImg = canvas.toDataURL('image/jpeg', 0.7);
+
+                    await database.ref('members/' + id).set({
+                        id, name: document.getElementById('regName').value, title: document.getElementById('regTitle').value,
+                        father: document.getElementById('regFather').value, mother: document.getElementById('regMother').value,
+                        address: document.getElementById('regAddress').value, nid: document.getElementById('regNid').value,
+                        blood: document.getElementById('regBlood').value, fb: document.getElementById('regFb').value,
+                        phone: document.getElementById('regPhone').value, img: compressedProfileImg, balance: 0
+                    });
+                    alert("নিবন্ধন সফল এবং প্রোফাইল ছবি রিসাইজ করা হয়েছে!");
+                };
             };
         }
-
-        async function addMoney() {
-            const id = document.getElementById('transId').value, amt = parseInt(document.getElementById('transAmount').value);
-            const isDepo = await verifyPin('depoPin', document.getElementById('transPin').value);
-            if (!isDepo) return alert("ভুল পিন!");
-            const user = await database.ref('members/' + id).once('value');
-            if (user.exists() && amt > 0) {
-                await database.ref('members/' + id).update({ balance: (user.val().balance || 0) + amt });
-                await database.ref('totalFund').set(totalFund + amt);
-                await database.ref('logs').push({ msg: `[+] জমা: ৳${amt} (ID: ${id})`, time: new Date().toLocaleString() });
-                alert("জমা সফল!");
-            }
-        }
-
-        async function withdrawMoney() {
-            const amt = parseInt(document.getElementById('transAmount').value), reason = document.getElementById('transReason').value;
-            const isAdmin = await verifyPin('adminPin', document.getElementById('transPin').value);
-            if (!isAdmin) return alert("ভুল পিন!");
-            if (amt > 0 && amt <= totalFund) {
-                await database.ref('totalFund').set(totalFund - amt);
-                await database.ref('logs').push({ msg: `[-] খরচ: ৳${amt} (${reason})`, time: new Date().toLocaleString() });
-                alert("খরচ সফল!");
-            }
-        }
         
+        function previewImg(i) { if (i.files && i.files[0]) { let r = new FileReader(); r.onload = (e) => { document.getElementById('imgPrev').src = e.target.result; document.getElementById('imgPrev').style.display = 'block'; }; r.readAsDataURL(i.files[0]); } }
         window.onload = () => { updateTime(); };
     </script>
 </body>
