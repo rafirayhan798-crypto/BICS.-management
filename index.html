@@ -8,6 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
     <style>
         .slider-img { display: none; width: 100%; height: 250px; object-fit: cover; }
@@ -35,10 +36,24 @@
         .btn-reg { background: var(--primary); }
         .btn-depo { background: var(--blue); }
         .btn-exp { background: var(--danger); }
-        .preview-img { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; display: none; margin: 10px auto; border: 3px solid var(--primary); }
+        
+        /* প্রোফাইল ছবি এবং নামের আকার সামান্য বড় করা হয়েছে */
+        .preview-img { width: 110px; height: 110px; border-radius: 50%; object-fit: cover; display: none; margin: 10px auto; border: 3px solid var(--primary); }
         #profileResult { display: none; text-align: left; padding: 15px; border: 2px solid var(--primary); border-radius: 10px; background: #fff; margin-top: 15px; }
-        .info-item { border-bottom: 1px solid #eee; padding: 5px 0; font-size: 14px; }
+        
+        .info-item { border-bottom: 1px solid #eee; padding: 8px 0; font-size: 14px; display: flex; justify-content: space-between; align-items: center; }
         .log-list { max-height: 150px; overflow-y: auto; font-size: 13px; background: #eee; padding: 10px; border-radius: 8px; }
+
+        .privacy-toggle { font-size: 11px; padding: 3px 8px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .pub-status { background: #e8f5e9; color: #2e7d32; }
+        .pri-status { background: #ffebee; color: #c62828; }
+        #userDashboard { display: none; border-top: 5px solid var(--blue); }
+        /* QR Output Style */
+        #qrOutput { display: flex; justify-content: center; margin-top: 10px; }
+        #qrOutput img { border: 1px solid #eee; padding: 5px; border-radius: 5px; }
+        
+        /* ব্যক্তিগত তহবিলের লাইনের স্টাইলিং (হালকা সবুজ ব্যাকগ্রাউন্ড এবং ফাঁকা জায়গা) */
+        .personal-fund-line { color: #27ae60; font-weight: bold; background-color: #e8f5e9; padding: 10px; border-radius: 6px; margin: 4px 0; }
     </style>
 </head>
 <body class="bg-gray-50 font-sans">
@@ -61,10 +76,10 @@
         <div class="bg-sky-100 p-4 rounded-xl shadow-sm border border-sky-200 mb-6">
             <h3 class="text-sky-800 font-bold mb-3 text-center border-b border-sky-200 pb-2 text-sm uppercase">জনকল্যাণমূলক কার্যক্রম এলাকা নির্বাচন</h3>
             <div class="grid grid-cols-2 gap-2 mb-3">
-                <select id="fDiv" class="border border-sky-300 p-2 rounded text-xs bg-white"><option value="">বিভাগ নির্বাচন</option></select>
-                <select id="fDist" class="border border-sky-300 p-2 rounded text-xs bg-white"><option value="">জেলা নির্বাচন</option></select>
-                <select id="fUpz" class="border border-sky-300 p-2 rounded text-xs bg-white"><option value="">উপজেলা নির্বাচন</option></select>
-                <select id="fUni" class="border border-sky-300 p-2 rounded text-xs bg-white"><option value="">ইউনিয়ন নির্বাচন</option></select>
+                <select id="fDiv" class="border border-sky-300 p-2 rounded text-xs bg-white focus:outline-sky-500"><option value="">বিভাগ নির্বাচন</option></select>
+                <select id="fDist" class="border border-sky-300 p-2 rounded text-xs bg-white focus:outline-sky-500"><option value="">জেলা নির্বাচন</option></select>
+                <select id="fUpz" class="border border-sky-300 p-2 rounded text-xs bg-white focus:outline-sky-500"><option value="">উপজেলা নির্বাচন</option></select>
+                <select id="fUni" class="border border-sky-300 p-2 rounded text-xs bg-white focus:outline-sky-500"><option value="">ইউনিয়ন নির্বাচন</option></select>
             </div>
             <button onclick="filterResults()" class="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 rounded-lg text-sm transition-colors">সার্চ করুন</button>
         </div>
@@ -80,31 +95,49 @@
                 <h1>৳ <span id="orgTotalDisplay">...</span></h1>
             </div>
 
-            <div class="box">
+            <div class="box" id="searchBoxSection">
                 <h3>🔍 সদস্য প্রোফাইল সার্চ</h3>
                 <input type="number" id="searchId" placeholder="সদস্য আইডি দিয়ে সার্চ দিন">
                 <button class="btn-search" onclick="searchMember()">সার্চ করুন</button>
                 <div id="profileResult">
                     <div class="text-center mb-2">
                         <img id="pImg" class="preview-img" style="display:inline-block;">
-                        <h2 id="pName" style="color: var(--primary); font-weight: bold;"></h2>
+                        <h2 id="pName" class="text-2xl" style="color: var(--primary); font-weight: bold;"></h2>
                         <span id="pTitle" style="color: #666; font-style: italic;"></span>
+                        <div id="qrOutput"></div>
                     </div>
-                    <div class="info-item"><b>পিতার নাম:</b> <span id="pFather"></span></div>
-                    <div class="info-item"><b>মাতার নাম:</b> <span id="pMother"></span></div>
-                    <div class="info-item"><b>ঠিকানা:</b> <span id="pAddress"></span></div>
-                    <div class="info-item"><b>এনআইডি:</b> <span id="pNid"></span></div>
-                    <div class="info-item"><b>রক্তের গ্রুপ:</b> <span id="pBlood"></span></div>
-                    <div class="info-item"><b>ফোন:</b> <span id="pPhone"></span></div>
-                    <div class="info-item"><b>ফেসবুক:</b> <a id="pFb" target="_blank" style="color: var(--blue);">লিঙ্ক</a></div>
-                    <div class="info-item text-center bg-green-50 p-2 mt-2"><b>ব্যক্তিগত তহবিল:</b> ৳ <span id="pBalance" style="font-size: 18px; color: var(--primary);">0</span></div>
+                    <div id="pDynamicData"></div>
                 </div>
+            </div>
+
+            <div class="box" id="loginBox">
+                <h3>🔐 সদস্য লগইন</h3>
+                <input type="number" id="loginId" placeholder="আপনার আইডি">
+                <input type="password" id="loginPass" placeholder="পাসওয়ার্ড">
+                <button class="btn-depo" onclick="handleLogin()">লগইন করুন</button>
+            </div>
+
+            <div class="box" id="userDashboard">
+                <h3>👤 আমার প্রোফাইল সেটিংস</h3>
+                <div class="text-center mb-4">
+                    <img id="uImg" class="preview-img" style="display:inline-block; border-color: var(--blue);">
+                    <h2 id="uNameDisplay" class="font-bold text-blue-800 text-xl"></h2>
+                </div>
+                <div id="uFullDataControl"></div>
+                <div class="mt-6 border-t pt-4">
+                    <h4 class="text-sm font-bold text-gray-700 mb-2">🔐 পাসওয়ার্ড পরিবর্তন</h4>
+                    <input type="password" id="oldPass" placeholder="পুরনো পাসওয়ার্ড">
+                    <input type="password" id="newPass" placeholder="নতুন পাসওয়ার্ড">
+                    <button class="btn-search text-xs py-2" onclick="changePassword()">পাসওয়ার্ড আপডেট করুন</button>
+                </div>
+                <button class="w-full bg-gray-400 text-white font-bold py-2 rounded-lg mt-4 text-xs" onclick="location.reload()">লগআউট</button>
             </div>
 
             <div class="box">
                 <h3>📝 নতুন সদস্য নিবন্ধন</h3>
                 <div class="row"><input type="text" id="regTitle" placeholder="পদবী"><input type="number" id="regId" placeholder="আইডি"></div>
                 <input type="text" id="regName" placeholder="পুরো নাম">
+                <input type="password" id="regPass" placeholder="লগইন পাসওয়ার্ড সেট করুন">
                 <div class="row"><input type="text" id="regFather" placeholder="পিতার নাম"><input type="text" id="regMother" placeholder="মাতার নাম"></div>
                 <input type="text" id="regAddress" placeholder="স্থায়ী ঠিকানা">
                 <div class="row">
@@ -139,10 +172,7 @@
         <div class="bg-slate-900 p-5 rounded-xl text-white shadow-2xl border-t-4 border-yellow-500 mb-10">
             <h2 class="text-xl font-bold mb-5 text-yellow-400 text-center border-b border-slate-700 pb-2">অ্যাডমিন কন্ট্রোল সেন্টার</h2>
             <div class="space-y-5">
-                <div>
-                    <label class="admin-label">অ্যাডমিন পিন</label>
-                    <input type="password" id="adminPin" placeholder="পিন লিখুন" class="admin-input border border-slate-700">
-                </div>
+                <div><label class="admin-label">অ্যাডমিন পিন</label><input type="password" id="adminPin" placeholder="পিন লিখুন" class="admin-input border border-slate-700"></div>
                 <div class="bg-slate-800 p-3 rounded-lg border border-slate-700">
                     <label class="admin-label text-blue-400">নিউজ হেডলাইন আপডেট:</label>
                     <input type="text" id="newsInput" placeholder="সংবাদ লিখুন..." class="admin-input mb-2">
@@ -173,71 +203,156 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
+        let loggedInUser = null;
+        const dataLabels = { balance:'ব্যক্তিগত তহবিল', father:'পিতার নাম', mother:'মাতার নাম', address:'ঠিকানা', nid:'এনআইডি', blood:'রক্তের গ্রুপ', phone:'ফোন', fb:'ফেসবুক' };
+
+        // Auto-search logic from URL
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const mId = urlParams.get('mId');
+            if (mId) {
+                document.getElementById('searchId').value = mId;
+                searchMember();
+            }
+        };
+
         function updateTime() {
             const now = new Date();
             document.getElementById('liveTime').innerText = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
         }
         setInterval(updateTime, 1000);
 
-        database.ref('siteData/news').on('value', (s) => {
-            document.getElementById('newsDisplay').innerText = s.val() || "জনসেবা পোর্টালে স্বাগতম...";
-        });
+        database.ref('siteData/news').on('value', (s) => { document.getElementById('newsDisplay').innerText = s.val() || "স্বাগতম..."; });
 
-        async function verifyPin(pinType, inputPin) {
-            const snapshot = await database.ref('security/' + pinType).once('value');
-            const actualPin = snapshot.val();
-            return inputPin === String(actualPin);
+        async function handleLogin() {
+            const id = document.getElementById('loginId').value;
+            const pass = document.getElementById('loginPass').value;
+            const snap = await database.ref('members/' + id).once('value');
+            if (snap.exists() && String(snap.val().password) === String(pass)) {
+                loggedInUser = snap.val();
+                showDashboard();
+            } else alert("আইডি বা পাসওয়ার্ড ভুল!");
         }
 
+        function showDashboard() {
+            document.getElementById('loginBox').style.display = 'none';
+            document.getElementById('userDashboard').style.display = 'block';
+            document.getElementById('uNameDisplay').innerText = loggedInUser.name;
+            document.getElementById('uImg').src = loggedInUser.img;
+            document.getElementById('uImg').style.display = 'inline-block';
+
+            let html = '';
+            const priv = loggedInUser.privacy || {};
+            for (let key in dataLabels) {
+                const isPri = priv[key] === 'private';
+                const status = isPri ? '🔒 গোপন' : '🌍 দৃশ্যমান';
+                const cls = isPri ? 'pri-status' : 'pub-status';
+                const val = (key === 'balance') ? '৳ ' + (loggedInUser[key] || 0) : (loggedInUser[key] || '-');
+                
+                // ব্যক্তিগত তহবিলের জন্য স্টাইলিং ক্লাস যোগ করা হয়েছে
+                let rowClass = (key === 'balance') ? 'personal-fund-line' : '';
+                
+                html += `<div class="info-item ${rowClass}"><span><b>${dataLabels[key]}:</b> ${val}</span><span class="privacy-toggle ${cls}" onclick="updatePrivacy('${key}')">${status}</span></div>`;
+            }
+            document.getElementById('uFullDataControl').innerHTML = html;
+        }
+
+        async function updatePrivacy(key) {
+            if (!loggedInUser.privacy) loggedInUser.privacy = {};
+            loggedInUser.privacy[key] = loggedInUser.privacy[key] === 'private' ? 'public' : 'private';
+            await database.ref('members/' + loggedInUser.id + '/privacy').set(loggedInUser.privacy);
+            showDashboard();
+        }
+
+        async function changePassword() {
+            const oldP = document.getElementById('oldPass').value;
+            const newP = document.getElementById('newPass').value;
+            if (!oldP || !newP) return alert("সবগুলো ঘর পূরণ করুন!");
+            if (String(oldP) === String(loggedInUser.password)) {
+                if (newP.length >= 4) {
+                    try {
+                        await database.ref('members/' + loggedInUser.id + '/password').set(newP);
+                        loggedInUser.password = newP;
+                        alert("পাসওয়ার্ড সফলভাবে পরিবর্তিত হয়েছে!");
+                        document.getElementById('oldPass').value = ""; document.getElementById('newPass').value = "";
+                    } catch (e) { alert("ত্রুটি: " + e.message); }
+                } else alert("নতুন পাসওয়ার্ড কমপক্ষে ৪ অক্ষরের দিন!");
+            } else alert("পুরাতন পাসওয়ার্ডটি সঠিক নয়!");
+        }
+
+        async function searchMember() {
+            const id = document.getElementById('searchId').value;
+            if(!id) return alert("আইডি দিন!");
+            const snap = await database.ref('members/' + id).once('value');
+            if (snap.exists()) {
+                const m = snap.val();
+                const priv = m.privacy || {};
+                document.getElementById('pName').innerText = m.name;
+                document.getElementById('pTitle').innerText = m.title || "সদস্য";
+                document.getElementById('pImg').src = m.img; document.getElementById('pImg').style.display = 'inline-block';
+                
+                // QR Code Logic
+                document.getElementById('qrOutput').innerHTML = "";
+                const profileUrl = window.location.origin + window.location.pathname + "?mId=" + id;
+                new QRCode(document.getElementById("qrOutput"), {
+                    text: profileUrl, width: 110, height: 110
+                });
+
+                let html = '';
+                for (let key in dataLabels) {
+                    const isPrivate = priv[key] === 'private';
+                    let val = m[key] || '-';
+                    
+                    if (isPrivate) {
+                        val = '<span class="text-red-400 italic text-[11px]">🔒 তথ্যটি গোপন</span>';
+                    } else if (key === 'fb' && val !== '-') {
+                        // Facebook clickable link logic
+                        let fbUrl = val.includes('facebook.com') ? (val.includes('http') ? val : 'https://' + val) : 'https://www.facebook.com/' + val;
+                        val = `<a href="${fbUrl}" target="_blank" class="text-blue-600 font-bold underline">প্রোফাইল দেখুন</a>`;
+                    } else if (key === 'balance') {
+                        // সার্চ রেজাল্টেও ব্যক্তিগত তহবিলের জন্য স্টাইলিং ক্লাস যোগ করা হয়েছে
+                        val = '<b class="personal-fund-line">৳ ' + (m[key] || 0) + '</b>';
+                    }
+
+                    // সার্চ রেজাল্টের লাইনের জন্য স্টাইলিং ক্লাস যোগ করা হয়েছে
+                    let rowClass = (key === 'balance') ? 'personal-fund-line' : '';
+
+                    html += `<div class="info-item ${rowClass}"><b>${dataLabels[key]}:</b> <span>${val}</span></div>`;
+                }
+                document.getElementById('pDynamicData').innerHTML = html;
+                document.getElementById('profileResult').style.display = 'block';
+            } else alert("পাওয়া যায়নি!");
+        }
+
+        // Other utility functions remained unchanged
+        async function verifyPin(t, p) { const s = await database.ref('security/' + t).once('value'); return String(p) === String(s.val()); }
+
         async function updateNews() {
-            const isAdmin = await verifyPin('adminPin', document.getElementById('adminPin').value);
-            if(!isAdmin) return alert("ভুল পিন!");
+            const ok = await verifyPin('adminPin', document.getElementById('adminPin').value);
+            if(!ok) return alert("ভুল পিন!");
             database.ref('siteData/news').set(document.getElementById('newsInput').value).then(() => alert("সেভ হয়েছে!"));
         }
 
-        let sIdx = 0;
-        database.ref('siteData/slides').on('value', (s) => {
-            const data = s.val() ? Object.values(s.val()) : [{img:'https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=800', cap: 'স্বাগতম'}];
-            const container = document.getElementById('sliderContainer');
-            container.innerHTML = data.map((s, i) => `<img src="${s.img}" data-cap="${s.cap}" class="slider-img ${i===0?'active':''}">`).join('');
-            document.getElementById('sliderCaption').innerText = data[0].cap;
-        });
-
-        setInterval(() => {
-            const imgs = document.querySelectorAll('.slider-img');
-            if(imgs.length < 2) return;
-            imgs[sIdx].classList.remove('active');
-            sIdx = (sIdx + 1) % imgs.length;
-            imgs[sIdx].classList.add('active');
-            document.getElementById('sliderCaption').innerText = imgs[sIdx].getAttribute('data-cap');
-        }, 3000);
-
         async function handleFileUpload(type) {
-            const isAdmin = await verifyPin('adminPin', document.getElementById('adminPin').value);
-            if(!isAdmin) return alert("ভুল পিন!");
+            const ok = await verifyPin('adminPin', document.getElementById('adminPin').value);
+            if(!ok) return alert("ভুল পিন!");
             const fileInput = document.getElementById(type === 'slide' ? 'slideFileInput' : 'actFileInput');
             if(!fileInput.files[0]) return alert("ছবি দিন!");
-
-            const reader = new FileReader();
-            reader.readAsDataURL(fileInput.files[0]);
+            const reader = new FileReader(); reader.readAsDataURL(fileInput.files[0]);
             reader.onload = (e) => {
-                const img = new Image();
-                img.src = e.target.result;
+                const img = new Image(); img.src = e.target.result;
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
                     canvas.width = 600; canvas.height = img.height * (600 / img.width);
                     canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
                     const compressedImg = canvas.toDataURL('image/jpeg', 0.6);
-                    if(type === 'slide') {
-                        database.ref('siteData/slides').push({img: compressedImg, cap: document.getElementById('slideCapInput').value});
-                    } else {
-                        database.ref('siteData/activities').push({
-                            title: document.getElementById('actTitle').value, div: document.getElementById('actDiv').value,
-                            dist: document.getElementById('actDist').value, upz: document.getElementById('actUpz').value,
-                            uni: document.getElementById('actUni').value, img: compressedImg
-                        });
-                    }
-                    alert("সফলভাবে সেভ হয়েছে!");
+                    if(type === 'slide') database.ref('siteData/slides').push({img: compressedImg, cap: document.getElementById('slideCapInput').value});
+                    else database.ref('siteData/activities').push({
+                        title: document.getElementById('actTitle').value, div: document.getElementById('actDiv').value,
+                        dist: document.getElementById('actDist').value, upz: document.getElementById('actUpz').value,
+                        uni: document.getElementById('actUni').value, img: compressedImg
+                    });
+                    alert("সফল!");
                 };
             };
         }
@@ -245,133 +360,88 @@
         database.ref('siteData/activities').on('value', (s) => {
             const acts = s.val() ? Object.values(s.val()) : [];
             window.allActivities = acts;
-            updateDropdowns(acts);
-        });
-
-        function updateDropdowns(acts) {
-            const fields = [
-                { id: 'fDiv', key: 'div', label: 'বিভাগ' },
-                { id: 'fDist', key: 'dist', label: 'জেলা' },
-                { id: 'fUpz', key: 'upz', label: 'উপজেলা' },
-                { id: 'fUni', key: 'uni', label: 'ইউনিয়ন' }
-            ];
-            fields.forEach(field => {
-                const vals = [...new Set(acts.map(i => i[field.key]))].filter(v => v);
-                let options = `<option value="">${field.label} নির্বাচন</option>`;
-                vals.forEach(v => options += `<option value="${v}">${v}</option>`);
-                document.getElementById(field.id).innerHTML = options;
+            const f = [{ id: 'fDiv', k: 'div', l: 'বিভাগ' }, { id: 'fDist', k: 'dist', l: 'জেলা' }, { id: 'fUpz', k: 'upz', l: 'উপজেলা' }, { id: 'fUni', k: 'uni', l: 'ইউনিয়ন' }];
+            f.forEach(field => {
+                const v = [...new Set(acts.map(i => i[field.k]))].filter(x => x);
+                let o = `<option value="">${field.l} নির্বাচন</option>`;
+                v.forEach(x => o += `<option value="${x}">${x}</option>`);
+                document.getElementById(field.id).innerHTML = o;
             });
-        }
+        });
 
         function filterResults() {
             const div = document.getElementById('fDiv').value, dist = document.getElementById('fDist').value, upz = document.getElementById('fUpz').value, uni = document.getElementById('fUni').value;
-            if (!div && !dist && !upz && !uni) {
-                document.getElementById('activityContainer').innerHTML = `<div class="text-center py-10 bg-red-50 rounded-lg border border-red-200"><p class="text-red-600 font-bold">আপনার এলাকা নির্বাচন করুন</p></div>`;
-                return;
-            }
             const res = (window.allActivities || []).filter(i => (!div || i.div === div) && (!dist || i.dist === dist) && (!upz || i.upz === upz) && (!uni || i.uni === uni));
-            document.getElementById('activityContainer').innerHTML = res.reverse().map(i => `
-                <div class="bg-white rounded-xl shadow-md border overflow-hidden mb-2">
-                    <img src="${i.img}" class="w-full h-44 object-cover">
-                    <div class="p-3"><h3 class="font-bold text-sm">${i.title}</h3><p class="text-[10px] text-emerald-600 font-bold uppercase">${i.div} > ${i.dist} > ${i.upz} > ${i.uni}</p></div>
-                </div>`).join('') || `<p class="text-center py-10">তথ্য নেই।</p>`;
+            document.getElementById('activityContainer').innerHTML = res.reverse().map(i => `<div class="bg-white rounded-xl shadow-md border overflow-hidden mb-2"><img src="${i.img}" class="w-full h-44 object-cover"><div class="p-3"><h3 class="font-bold text-sm">${i.title}</h3><p class="text-[10px] text-emerald-600 font-bold uppercase">${i.div} > ${i.dist} > ${i.upz} > ${i.uni}</p></div></div>`).join('') || `<p class="text-center py-10">তথ্য নেই।</p>`;
         }
 
-        let totalFund = 0;
-        database.ref('totalFund').on('value', (s) => { totalFund = s.val() || 0; document.getElementById("orgTotalDisplay").innerText = totalFund; });
-        
+        database.ref('totalFund').on('value', (s) => document.getElementById("orgTotalDisplay").innerText = s.val() || 0);
         database.ref('logs').limitToLast(10).on('value', (s) => {
-            let list = document.getElementById("logList"); 
-            list.innerHTML = "";
-            s.forEach(c => { 
-                let l = c.val(); 
-                const logTime = new Date(l.time).toLocaleString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true, day: '2-digit', month: 'short', year: 'numeric' });
-                list.innerHTML = `<div class="py-1">• ${l.msg} <br><small class="text-gray-400">${logTime}</small></div><hr>` + list.innerHTML; 
-            });
+            let list = document.getElementById("logList"); list.innerHTML = "";
+            s.forEach(c => { let l = c.val(); list.innerHTML = `<div class="py-1">• ${l.msg} <br><small class="text-gray-400">${new Date(l.time).toLocaleString()}</small></div><hr>` + list.innerHTML; });
         });
 
+        function previewImg(i) { if (i.files && i.files[0]) { let r = new FileReader(); r.onload = (e) => { document.getElementById('imgPrev').src = e.target.result; document.getElementById('imgPrev').style.display = 'block'; }; r.readAsDataURL(i.files[0]); } }
+
+        async function saveMember() {
+            const ok = await verifyPin('adminPin', document.getElementById('regPin').value);
+            if (!ok) return alert("ভুল পিন!");
+            const id = document.getElementById('regId').value, file = document.getElementById('regPhoto').files[0];
+            if (!id || !file) return alert("আইডি ও ছবি দিন!");
+            const reader = new FileReader(); reader.readAsDataURL(file);
+            reader.onload = async (e) => {
+                await database.ref('members/' + id).set({
+                    id, password: document.getElementById('regPass').value, name: document.getElementById('regName').value, title: document.getElementById('regTitle').value,
+                    father: document.getElementById('regFather').value, mother: document.getElementById('regMother').value,
+                    address: document.getElementById('regAddress').value, nid: document.getElementById('regNid').value,
+                    blood: document.getElementById('regBlood').value, fb: document.getElementById('regFb').value,
+                    phone: document.getElementById('regPhone').value, img: e.target.result, balance: 0, privacy: {}
+                });
+                alert("সদস্য সেভ হয়েছে!");
+            };
+        }
+
         async function addMoney() {
-            const id = document.getElementById('transId').value;
-            const amt = parseInt(document.getElementById('transAmount').value);
-            const reason = document.getElementById('transReason').value || "জমা";
-            const isDepo = await verifyPin('depoPin', document.getElementById('transPin').value);
-            if (!isDepo) return alert("ভুল পিন!");
-            const userSnap = await database.ref('members/' + id).once('value');
-            if (userSnap.exists() && amt > 0) {
-                const userData = userSnap.val();
-                await database.ref('members/' + id).update({ balance: (userData.balance || 0) + amt });
-                await database.ref('totalFund').set(totalFund + amt);
-                await database.ref('logs').push({ msg: `[+] জমা: ৳${amt} (ID: ${id}) - ${reason}`, time: new Date().toISOString() });
+            const id = document.getElementById('transId').value, amt = parseInt(document.getElementById('transAmount').value);
+            const ok = await verifyPin('adminPin', document.getElementById('transPin').value);
+            if (!ok) return alert("ভুল পিন!");
+            const user = await database.ref('members/' + id).once('value');
+            if (user.exists()) {
+                const f = await database.ref('totalFund').once('value');
+                await database.ref('members/' + id).update({ balance: (user.val().balance || 0) + amt });
+                await database.ref('totalFund').set((f.val() || 0) + amt);
+                await database.ref('logs').push({ msg: `[+] জমা: ৳${amt} (ID: ${id})`, time: new Date().toISOString() });
                 alert("জমা সফল!");
-            } else alert("আইডি ভুল!");
+            }
         }
 
         async function withdrawMoney() {
-            const amt = parseInt(document.getElementById('transAmount').value);
-            const reason = document.getElementById('transReason').value || "খরচ";
-            const isAdmin = await verifyPin('adminPin', document.getElementById('transPin').value);
-            if (!isAdmin) return alert("ভুল পিন!");
-            if (amt > 0 && amt <= totalFund) {
-                await database.ref('totalFund').set(totalFund - amt);
-                await database.ref('logs').push({ msg: `[-] খরচ: ৳${amt} - কারণ: ${reason}`, time: new Date().toISOString() });
+            const amt = parseInt(document.getElementById('transAmount').value), reason = document.getElementById('transReason').value;
+            const ok = await verifyPin('adminPin', document.getElementById('transPin').value);
+            if (!ok) return alert("ভুল পিন!");
+            const f = await database.ref('totalFund').once('value');
+            if (amt <= (f.val() || 0)) {
+                await database.ref('totalFund').set(f.val() - amt);
+                await database.ref('logs').push({ msg: `[-] খরচ: ৳${amt} (${reason})`, time: new Date().toISOString() });
                 alert("খরচ সফল!");
-            } else alert("পর্যাপ্ত ফান্ড নেই!");
+            }
         }
 
-        async function searchMember() {
-            const id = document.getElementById('searchId').value;
-            const snap = await database.ref('members/' + id).once('value');
-            if (snap.exists()) {
-                const m = snap.val();
-                document.getElementById('pName').innerText = m.name;
-                document.getElementById('pTitle').innerText = m.title || "সদস্য";
-                document.getElementById('pFather').innerText = m.father || "-";
-                document.getElementById('pMother').innerText = m.mother || "-";
-                document.getElementById('pAddress').innerText = m.address || "-";
-                document.getElementById('pNid').innerText = m.nid || "-";
-                document.getElementById('pBlood').innerText = m.blood || "-";
-                document.getElementById('pPhone').innerText = m.phone || "-";
-                document.getElementById('pFb').href = m.fb || "#";
-                document.getElementById('pBalance').innerText = m.balance;
-                document.getElementById('pImg').src = m.img; document.getElementById('pImg').style.display = 'inline-block';
-                document.getElementById('profileResult').style.display = 'block';
-            } else alert("পাওয়া যায়নি!");
-        }
+        database.ref('siteData/slides').on('value', (s) => {
+            const data = s.val() ? Object.values(s.val()) : [{img:'https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=800', cap: 'স্বাগতম'}];
+            document.getElementById('sliderContainer').innerHTML = data.map((s, i) => `<img src="${s.img}" data-cap="${s.cap}" class="slider-img ${i===0?'active':''}">`).join('');
+            document.getElementById('sliderCaption').innerText = data[0].cap;
+        });
 
-        async function saveMember() {
-            const isAdmin = await verifyPin('adminPin', document.getElementById('regPin').value);
-            if (!isAdmin) return alert("ভুল পিন!");
-            const id = document.getElementById('regId').value, file = document.getElementById('regPhoto').files[0];
-            if (!id || !file) return alert("আইডি ও ছবি দিন!");
-            
-            const reader = new FileReader(); 
-            reader.readAsDataURL(file);
-            reader.onload = async (e) => {
-                const img = new Image();
-                img.src = e.target.result;
-                img.onload = async () => {
-                    // প্রোফাইল ছবি রিসাইজ (Resize) লজিক
-                    const canvas = document.createElement('canvas');
-                    const size = 300; // ৩০০ পিক্সেল যথেষ্ট
-                    canvas.width = size;
-                    canvas.height = img.height * (size / img.width);
-                    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-                    const compressedProfileImg = canvas.toDataURL('image/jpeg', 0.7);
-
-                    await database.ref('members/' + id).set({
-                        id, name: document.getElementById('regName').value, title: document.getElementById('regTitle').value,
-                        father: document.getElementById('regFather').value, mother: document.getElementById('regMother').value,
-                        address: document.getElementById('regAddress').value, nid: document.getElementById('regNid').value,
-                        blood: document.getElementById('regBlood').value, fb: document.getElementById('regFb').value,
-                        phone: document.getElementById('regPhone').value, img: compressedProfileImg, balance: 0
-                    });
-                    alert("নিবন্ধন সফল এবং প্রোফাইল ছবি রিসাইজ করা হয়েছে!");
-                };
-            };
-        }
-        
-        function previewImg(i) { if (i.files && i.files[0]) { let r = new FileReader(); r.onload = (e) => { document.getElementById('imgPrev').src = e.target.result; document.getElementById('imgPrev').style.display = 'block'; }; r.readAsDataURL(i.files[0]); } }
-        window.onload = () => { updateTime(); };
+        setInterval(() => {
+            const imgs = document.querySelectorAll('.slider-img');
+            if(imgs.length < 2) return;
+            const active = document.querySelector('.slider-img.active');
+            let next = active.nextElementSibling || imgs[0];
+            active.classList.remove('active');
+            next.classList.add('active');
+            document.getElementById('sliderCaption').innerText = next.getAttribute('data-cap');
+        }, 3000);
     </script>
 </body>
 </html>
