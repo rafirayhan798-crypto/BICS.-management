@@ -37,7 +37,6 @@
         .btn-depo { background: var(--blue); }
         .btn-exp { background: var(--danger); }
         
-        /* প্রোফাইল ছবি এবং নামের আকার সামান্য বড় করা হয়েছে */
         .preview-img { width: 110px; height: 110px; border-radius: 50%; object-fit: cover; display: none; margin: 10px auto; border: 3px solid var(--primary); }
         #profileResult { display: none; text-align: left; padding: 15px; border: 2px solid var(--primary); border-radius: 10px; background: #fff; margin-top: 15px; }
         
@@ -48,11 +47,10 @@
         .pub-status { background: #e8f5e9; color: #2e7d32; }
         .pri-status { background: #ffebee; color: #c62828; }
         #userDashboard { display: none; border-top: 5px solid var(--blue); }
-        /* QR Output Style */
+        
         #qrOutput { display: flex; justify-content: center; margin-top: 10px; }
         #qrOutput img { border: 1px solid #eee; padding: 5px; border-radius: 5px; }
         
-        /* ব্যক্তিগত তহবিলের লাইনের স্টাইলিং (হালকা সবুজ ব্যাকগ্রাউন্ড এবং ফাঁকা জায়গা) */
         .personal-fund-line { color: #27ae60; font-weight: bold; background-color: #e8f5e9; padding: 10px; border-radius: 6px; margin: 4px 0; }
     </style>
 </head>
@@ -206,13 +204,13 @@
         let loggedInUser = null;
         const dataLabels = { balance:'ব্যক্তিগত তহবিল', father:'পিতার নাম', mother:'মাতার নাম', address:'ঠিকানা', nid:'এনআইডি', blood:'রক্তের গ্রুপ', phone:'ফোন', fb:'ফেসবুক' };
 
-        // Auto-search logic from URL
         window.onload = function() {
             const urlParams = new URLSearchParams(window.location.search);
             const mId = urlParams.get('mId');
             if (mId) {
                 document.getElementById('searchId').value = mId;
-                searchMember();
+                // auto-scroll after a short delay to ensure UI renders
+                searchMember(true); 
             }
         };
 
@@ -248,10 +246,7 @@
                 const status = isPri ? '🔒 গোপন' : '🌍 দৃশ্যমান';
                 const cls = isPri ? 'pri-status' : 'pub-status';
                 const val = (key === 'balance') ? '৳ ' + (loggedInUser[key] || 0) : (loggedInUser[key] || '-');
-                
-                // ব্যক্তিগত তহবিলের জন্য স্টাইলিং ক্লাস যোগ করা হয়েছে
                 let rowClass = (key === 'balance') ? 'personal-fund-line' : '';
-                
                 html += `<div class="info-item ${rowClass}"><span><b>${dataLabels[key]}:</b> ${val}</span><span class="privacy-toggle ${cls}" onclick="updatePrivacy('${key}')">${status}</span></div>`;
             }
             document.getElementById('uFullDataControl').innerHTML = html;
@@ -280,7 +275,7 @@
             } else alert("পুরাতন পাসওয়ার্ডটি সঠিক নয়!");
         }
 
-        async function searchMember() {
+        async function searchMember(shouldScroll = false) {
             const id = document.getElementById('searchId').value;
             if(!id) return alert("আইডি দিন!");
             const snap = await database.ref('members/' + id).once('value');
@@ -291,7 +286,6 @@
                 document.getElementById('pTitle').innerText = m.title || "সদস্য";
                 document.getElementById('pImg').src = m.img; document.getElementById('pImg').style.display = 'inline-block';
                 
-                // QR Code Logic
                 document.getElementById('qrOutput').innerHTML = "";
                 const profileUrl = window.location.origin + window.location.pathname + "?mId=" + id;
                 new QRCode(document.getElementById("qrOutput"), {
@@ -302,29 +296,30 @@
                 for (let key in dataLabels) {
                     const isPrivate = priv[key] === 'private';
                     let val = m[key] || '-';
-                    
                     if (isPrivate) {
                         val = '<span class="text-red-400 italic text-[11px]">🔒 তথ্যটি গোপন</span>';
                     } else if (key === 'fb' && val !== '-') {
-                        // Facebook clickable link logic
                         let fbUrl = val.includes('facebook.com') ? (val.includes('http') ? val : 'https://' + val) : 'https://www.facebook.com/' + val;
                         val = `<a href="${fbUrl}" target="_blank" class="text-blue-600 font-bold underline">প্রোফাইল দেখুন</a>`;
                     } else if (key === 'balance') {
-                        // সার্চ রেজাল্টেও ব্যক্তিগত তহবিলের জন্য স্টাইলিং ক্লাস যোগ করা হয়েছে
                         val = '<b class="personal-fund-line">৳ ' + (m[key] || 0) + '</b>';
                     }
-
-                    // সার্চ রেজাল্টের লাইনের জন্য স্টাইলিং ক্লাস যোগ করা হয়েছে
                     let rowClass = (key === 'balance') ? 'personal-fund-line' : '';
-
                     html += `<div class="info-item ${rowClass}"><b>${dataLabels[key]}:</b> <span>${val}</span></div>`;
                 }
                 document.getElementById('pDynamicData').innerHTML = html;
                 document.getElementById('profileResult').style.display = 'block';
+
+                // অটো-স্ক্রল ফাংশনালিটি (কিউআর স্ক্যানের জন্য)
+                if(shouldScroll) {
+                    setTimeout(() => {
+                        document.getElementById('searchBoxSection').scrollIntoView({ behavior: 'smooth' });
+                    }, 500);
+                }
+
             } else alert("পাওয়া যায়নি!");
         }
 
-        // Other utility functions remained unchanged
         async function verifyPin(t, p) { const s = await database.ref('security/' + t).once('value'); return String(p) === String(s.val()); }
 
         async function updateNews() {
