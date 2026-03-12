@@ -52,6 +52,7 @@
         #qrOutput img { border: 1px solid #eee; padding: 5px; border-radius: 5px; }
         
         .personal-fund-line { color: #27ae60; font-weight: bold; background-color: #e8f5e9; padding: 10px; border-radius: 6px; margin: 4px 0; }
+        .payment-option { border: 1px solid #eee; padding: 10px; border-radius: 8px; margin-bottom: 10px; text-align: center; }
     </style>
 </head>
 <body class="bg-gray-50 font-sans">
@@ -91,6 +92,18 @@
             <div class="total-card">
                 <span>সংগঠনের মোট ফান্ড</span>
                 <h1>৳ <span id="orgTotalDisplay">...</span></h1>
+            </div>
+
+            <div class="box">
+                <h3>💳 অনলাইন টাকা জমা (বিকাশ/নগদ/রকেট)</h3>
+                <div class="payment-option bg-pink-50 border-pink-200">
+                    <p class="text-xs text-pink-700 font-bold">বিকাশ/নগদ/রকেট (Personal): 01XXXXXXXXX</p>
+                    <p class="text-[10px] text-gray-500 italic">টাকা পাঠিয়ে TrxID নিচে দিন</p>
+                </div>
+                <input type="number" id="onlineId" placeholder="আপনার সদস্য আইডি">
+                <input type="number" id="onlineAmt" placeholder="টাকার পরিমাণ">
+                <input type="text" id="onlineTrx" placeholder="Transaction ID (TrxID)">
+                <button class="btn-reg bg-gradient-to-r from-pink-500 to-red-500" onclick="submitOnlinePayment()">জমা অনুরোধ পাঠান</button>
             </div>
 
             <div class="box" id="searchBoxSection">
@@ -171,6 +184,12 @@
             <h2 class="text-xl font-bold mb-5 text-yellow-400 text-center border-b border-slate-700 pb-2">অ্যাডমিন কন্ট্রোল সেন্টার</h2>
             <div class="space-y-5">
                 <div><label class="admin-label">অ্যাডমিন পিন</label><input type="password" id="adminPin" placeholder="পিন লিখুন" class="admin-input border border-slate-700"></div>
+                
+                <div class="bg-slate-800 p-3 rounded-lg border border-slate-700">
+                    <label class="admin-label text-orange-400">পেন্ডিং অনলাইন জমা যাচাই:</label>
+                    <div id="pendingPayments" class="text-xs text-gray-300">চেক করা হচ্ছে...</div>
+                </div>
+
                 <div class="bg-slate-800 p-3 rounded-lg border border-slate-700">
                     <label class="admin-label text-blue-400">নিউজ হেডলাইন আপডেট:</label>
                     <input type="text" id="newsInput" placeholder="সংবাদ লিখুন..." class="admin-input mb-2">
@@ -209,9 +228,9 @@
             const mId = urlParams.get('mId');
             if (mId) {
                 document.getElementById('searchId').value = mId;
-                // auto-scroll after a short delay to ensure UI renders
                 searchMember(true); 
             }
+            loadPendingPayments();
         };
 
         function updateTime() {
@@ -221,6 +240,56 @@
         setInterval(updateTime, 1000);
 
         database.ref('siteData/news').on('value', (s) => { document.getElementById('newsDisplay').innerText = s.val() || "স্বাগতম..."; });
+
+        // অনলাইন জমা ফাংশন
+        async function submitOnlinePayment() {
+            const id = document.getElementById('onlineId').value;
+            const amt = parseInt(document.getElementById('onlineAmt').value);
+            const trx = document.getElementById('onlineTrx').value;
+            if(!id || !amt || !trx) return alert("সবগুলো ঘর পূরণ করুন!");
+            
+            const user = await database.ref('members/' + id).once('value');
+            if(!user.exists()) return alert("সদস্য আইডি পাওয়া যায়নি!");
+
+            const payData = { id, amt, trx, name: user.val().name, time: new Date().toISOString() };
+            await database.ref('pendingPayments').push(payData);
+            alert("আপনার জমার অনুরোধটি পাঠানো হয়েছে। অ্যাডমিন যাচাই করার পর ফান্ডে যোগ হবে।");
+            document.getElementById('onlineAmt').value = '';
+            document.getElementById('onlineTrx').value = '';
+        }
+
+        // অ্যাডমিন কর্তৃক পেমেন্ট লোড
+        function loadPendingPayments() {
+            database.ref('pendingPayments').on('value', (s) => {
+                const list = document.getElementById('pendingPayments');
+                if(!s.exists()) { list.innerHTML = "কোন পেন্ডিং জমা নেই।"; return; }
+                let html = '';
+                s.forEach(child => {
+                    const p = child.val();
+                    html += `<div class="p-2 border border-slate-700 mb-2 rounded">
+                        ID: ${p.id} (${p.name}) | Amt: ${p.amt} | Trx: ${p.trx}
+                        <button class="bg-emerald-600 px-2 py-1 rounded ml-2" onclick="approvePayment('${child.key}', '${p.id}', ${p.amt})">Approve</button>
+                    </div>`;
+                });
+                list.innerHTML = html;
+            });
+        }
+
+        // পেমেন্ট অনুমোদন
+        async function approvePayment(key, id, amt) {
+            const ok = await verifyPin('adminPin', document.getElementById('adminPin').value);
+            if(!ok) return alert("ভুল অ্যাডমিন পিন!");
+            
+            const user = await database.ref('members/' + id).once('value');
+            if(user.exists()) {
+                const f = await database.ref('totalFund').once('value');
+                await database.ref('members/' + id).update({ balance: (user.val().balance || 0) + amt });
+                await database.ref('totalFund').set((f.val() || 0) + amt);
+                await database.ref('logs').push({ msg: `[+] অনলাইন জমা: ৳${amt} (ID: ${id})`, time: new Date().toISOString() });
+                await database.ref('pendingPayments/' + key).remove();
+                alert("অনুমোদিত হয়েছে!");
+            }
+        }
 
         async function handleLogin() {
             const id = document.getElementById('loginId').value;
@@ -310,13 +379,11 @@
                 document.getElementById('pDynamicData').innerHTML = html;
                 document.getElementById('profileResult').style.display = 'block';
 
-                // অটো-স্ক্রল ফাংশনালিটি (কিউআর স্ক্যানের জন্য)
                 if(shouldScroll) {
                     setTimeout(() => {
                         document.getElementById('searchBoxSection').scrollIntoView({ behavior: 'smooth' });
                     }, 500);
                 }
-
             } else alert("পাওয়া যায়নি!");
         }
 
